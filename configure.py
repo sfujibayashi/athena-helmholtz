@@ -153,6 +153,12 @@ parser.add_argument('-debug',
                     default=False,
                     help='enable debug flags; override other compiler options')
 
+# -eos_table argument
+parser.add_argument('-eos_table',
+                    action='store_true',
+                    default=False,
+                    help='enable tabulated eos flags')
+
 # -coverage argument
 parser.add_argument('-coverage',
                     action='store_true',
@@ -387,6 +393,9 @@ else:
     definitions['NHYDRO_VARIABLES'] = '5'
     if args['eos'] in ['general/eos_table', 'general/helmholtz']:
         definitions['EOS_TABLE_ENABLED'] = '1'
+
+if args['eos_table']:
+    definitions['EOS_TABLE_ENABLED'] = '1'
 
 # --flux=[name] argument
 definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
