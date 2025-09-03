@@ -94,6 +94,7 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
 	Real ye  = pscalars->r(helm::i_ye,k,j,i);
 	Real abar= pscalars->r(helm::i_abar,k,j,i);
 	AthenaArray<Real> out;
+	out.NewAthenaArray(8);
 	peos->HelmLookupRhoT(rho, temp, ye, abar, out);
 	
 	Real entr = out(7);
@@ -178,8 +179,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 	  rho = rho_ej;
 	  eth = eth_ej;
 	} else {
-	  rho = rho_ej*1e-5;
-	  eth = eth_ej*1e-5;
+	  rho = rho_ej*1e-12;
+	  eth = eth_ej*1e-12;
         }
 	
         phydro->u(IDN,k,j,i) = rho;
