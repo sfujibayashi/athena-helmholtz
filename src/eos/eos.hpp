@@ -163,6 +163,13 @@ class EquationOfState {
     AthenaArray<Real> &s, const AthenaArray<Real> &r_old, AthenaArray<Real> &r,
     Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
 
+  // new function to call helmholtz EOS outside helmholtz.cpp file
+  void HelmLookupRhoT(
+    Real den, Real temp, Real ye, Real abar,
+    AthenaArray<Real> &OutData);
+  // temperature call
+  Real TempFromRhoEg(Real rho, Real egas, Real* s);
+  
  private:
   // (C++11) in-class Default Member Initializer (fallback option):
   const Real float_min{std::numeric_limits<float>::min()};
