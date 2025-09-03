@@ -26,7 +26,7 @@
 #include "../eos.hpp"
 
 namespace HelmholtzConstants {
-  const int nOut = 7;
+  const int nOut = 8;
   const Real forth=4.0/3.0, third=1.0/3.0;
   const Real ssol=5.6704e-5, amu=1.66053878283e-24, h=6.6260689633e-27;
   const Real qe=4.8032042712e-10, avo=6.0221417930e23, clight=2.99792458e10,
@@ -116,7 +116,7 @@ class HelmTable {
 #endif
     // precission for inversion
     prec = pin->GetOrAddReal("hydro", "helm_prec", 1e-8);
-    nmax = pin->GetOrAddInteger("hydro", "helm_nmax", 100);
+    nmax = pin->GetOrAddInteger("hydro", "helm_nmax", 1000);
     Tfloor = pin->GetOrAddBoolean("hydro", "helm_Tfloor", false);
 
     fi.NewAthenaArray(36);
