@@ -187,6 +187,21 @@ class HelmTable {
     //Real dsradda = 0.0;
     //Real dsraddz = 0.0;
 
+
+    // Real erad, prad, srad, dpraddt, dpraddd, deraddt, deraddd, dsraddt, dsraddd;
+    // erad = 0.0;
+    // prad = 0.0;
+    // srad = 0.0;
+    // dpraddt = 0.0;
+    // dpraddd = 0.0;
+    // deraddt = 0.0;
+    // deraddd = 0.0;
+    // dsraddt = 0.0;
+    // dsraddd = 0.0;
+
+
+    Real s, x, y, z;
+
     //////////////////
     // ion section: //
     //////////////////
@@ -209,7 +224,7 @@ class HelmTable {
 
     // sackur-tetrode equation for the ion entropy of
     // a single ideal gas characterized by abar
-    Real s, x, y, z;
+    // Real s, x, y, z;
     x       = abar*abar*std::sqrt(abar) * deni/avo;
     s       = sioncon * temp;
     z       = x * s * std::sqrt(s);
@@ -222,6 +237,21 @@ class HelmTable {
     //x = avo*kerg/abar;
     //Real dsionda = (dpionda*deni + deionda)*tempi + kergavo*ytot1*ytot1* (2.5 - y);
     //Real dsiondz = 0.0;
+
+    
+    
+    // Real eion, pion, sion, dpiondt, dpiondd, deiondt, deiondd, dsiondt, dsiondd;
+    // eion = 0.0;
+    // pion = 0.0;
+    // sion = 0.0;
+    // dpiondt = 0.0;
+    // dpiondd = 0.0;
+    // deiondt = 0.0;
+    // deiondd = 0.0;
+    // dsiondt = 0.0;
+    // dsiondd = 0.0;
+    
+
 
     ////////////////////////////////
     // electron-positron section: //
@@ -439,12 +469,25 @@ class HelmTable {
     //Real dsepda  = ytot1 * (ye * df_dt * din - sele);
     //Real dsepdz  = -ytot1 * (ye * df_dt * den  + df_t);
 
-
+    
     Real eele    = ye*free + temp * sele;
     Real deepdt  = temp * dsepdt;
     //Real deepdd  = x * df_d + temp * dsepdd;
     //Real deepda  = -ye * ytot1 * (free +  df_d * din) + temp * dsepda;
     //Real deepdz  = ytot1* (free + ye * df_d * den) + temp * dsepdz;
+
+    // Real eele, pele, sele, dpepdt, dpepdd, deepdt, deepdd, dsepdt, dsepdd;
+    // eele = 0.0;
+    // pele = 0.0;
+    // sele = 0.0;
+    // dpepdt = 0.0;
+    // dpepdd = 0.0;
+    // deepdt = 0.0;
+    // deepdd = 0.0;
+    // dsepdt = 0.0;
+    // dsepdd = 0.0;
+
+
 
     // coulomb section:
 
@@ -453,115 +496,133 @@ class HelmTable {
     // lami is the average ion seperation
     // plasg is the plasma coupling parameter
 
-    z        = forth * PI;
-    s        = z * xni;
-    Real dsdd     = z * dxnidd;
-    Real dsda     = z * dxnida;
-
-    Real lami     = std::pow(s, -third);
-    Real inv_lami = 1.0/lami;
-    z = -third * lami;
-    Real lamidd   = z * dsdd/s;
-    Real lamida   = z * dsda/s;
-
-    Real plasg    = zbar*zbar*esqu*ktinv*inv_lami;
-#ifdef MYDEBUG
-    printf("plasg xni sele: %.16e, %.16e, %.16e\n", plasg, xni, sele);
-#endif
-    z = -plasg * inv_lami;
-    Real plasgdd  = z * lamidd;
-    Real plasgda  = z * lamida;
-    Real plasgdt  = -plasg*ktinv * kerg;
-    Real plasgdz  = 2.0 * plasg/zbar;
-
     Real ecoul, pcoul, scoul, decouldd, decouldt, decoulda, decouldz, dpcouldd, dpcouldt,
-    dpcoulda, dpcouldz, dscouldd, dscouldt, dscoulda, dscouldz;
-    // yakovlev & shalybkov 1989 equations 82, 85, 86, 87
-    if (plasg >= 1.0) {
-      x        = std::pow(plasg, 0.25);
-      y        = avo * ytot1 * kerg;
-      ecoul    = y * temp * (a1*plasg + b1*x + c1/x + d1);
-      pcoul    = third * den * ecoul;
-      Real idkbro = 3.0e0*b1*x - 5.0e0*c1/x+d1*(std::log(plasg)-1.0e0) - e1;
-      scoul    = -y * idkbro;
-#ifdef MYDEBUG
-      //printf("a1, b1, c1, d1, ec: %.16e, %.16e, %.16e, %.16e, %.16e, %.16e\n",
-      //       a1, b1, c1, d1, e1, ecoul);
-      //printf("scoul, y, x: %.16e, %.16e, %.16e, %.16e\n", scoul, y, x,
-      //       3.0*b1*x - 5.0*c1/x + d1 * (std::log(plasg) - 1.0) - e1);
-      //printf("log(plasg): %.16e\n", std::log(plasg));
-      printf("idk bro: %.16e\n", idkbro);
-      printf("%.16e, %.16e, %.16e, %.16e\n", 3.0e0*b1*x, 5.0e0*c1/x,
-             d1*(std::log(plasg)-1.0e0), e1);
-#endif
+      dpcoulda, dpcouldz, dscouldd, dscouldt, dscoulda, dscouldz;
 
-      y        = avo*ytot1*kt*(a1 + 0.25/plasg*(b1*x - c1/x));
-      decouldd = y * plasgdd;
-      decouldt = y * plasgdt + ecoul/temp;
-      decoulda = y * plasgda - ecoul/abar;
-      decouldz = y * plasgdz;
+//     z        = forth * PI;
+//     s        = z * xni;
+//     Real dsdd     = z * dxnidd;
+//     Real dsda     = z * dxnida;
 
-      y        = third * den;
-      dpcouldd = third * ecoul + y*decouldd;
-      dpcouldt = y * decouldt;
-      dpcoulda = y * decoulda;
-      dpcouldz = y * decouldz;
+//     Real lami     = std::pow(s, -third);
+//     Real inv_lami = 1.0/lami;
+//     z = -third * lami;
+//     Real lamidd   = z * dsdd/s;
+//     Real lamida   = z * dsda/s;
 
-      y        = -avo*kerg/(abar*plasg)*(0.75*b1*x+1.25*c1/x+d1);
-      dscouldd = y * plasgdd;
-      dscouldt = y * plasgdt;
-      dscoulda = y * plasgda - scoul/abar;
-      dscouldz = y * plasgdz;
+//     Real plasg    = zbar*zbar*esqu*ktinv*inv_lami;
+// #ifdef MYDEBUG
+//     printf("plasg xni sele: %.16e, %.16e, %.16e\n", plasg, xni, sele);
+// #endif
+//     z = -plasg * inv_lami;
+//     Real plasgdd  = z * lamidd;
+//     Real plasgda  = z * lamida;
+//     Real plasgdt  = -plasg*ktinv * kerg;
+//     Real plasgdz  = 2.0 * plasg/zbar;
 
-    // yakovlev & shalybkov 1989 equations 102, 103, 104
-    } else { // (plasg < 1.0)
-      x        = plasg*std::sqrt(plasg);
-      y        = std::pow(plasg, b2);
-      z        = c2 * x - third * a2 * y;
-      pcoul    = -pion * z;
-      ecoul    = 3.0 * pcoul/den;
-      scoul    = -avo/abar*kerg*(c2*x -a2*(b2-1.0)/b2*y);
+//     // yakovlev & shalybkov 1989 equations 82, 85, 86, 87
+//     if (plasg >= 1.0) {
+//       x        = std::pow(plasg, 0.25);
+//       y        = avo * ytot1 * kerg;
+//       ecoul    = y * temp * (a1*plasg + b1*x + c1/x + d1);
+//       pcoul    = third * den * ecoul;
+//       Real idkbro = 3.0e0*b1*x - 5.0e0*c1/x+d1*(std::log(plasg)-1.0e0) - e1;
+//       scoul    = -y * idkbro;
+// #ifdef MYDEBUG
+//       //printf("a1, b1, c1, d1, ec: %.16e, %.16e, %.16e, %.16e, %.16e, %.16e\n",
+//       //       a1, b1, c1, d1, e1, ecoul);
+//       //printf("scoul, y, x: %.16e, %.16e, %.16e, %.16e\n", scoul, y, x,
+//       //       3.0*b1*x - 5.0*c1/x + d1 * (std::log(plasg) - 1.0) - e1);
+//       //printf("log(plasg): %.16e\n", std::log(plasg));
+//       printf("idk bro: %.16e\n", idkbro);
+//       printf("%.16e, %.16e, %.16e, %.16e\n", 3.0e0*b1*x, 5.0e0*c1/x,
+//              d1*(std::log(plasg)-1.0e0), e1);
+// #endif
 
-      s        = 1.5*c2*x/plasg - third*a2*b2*y/plasg;
-      dpcouldd = -dpiondd*z - pion*s*plasgdd;
-      dpcouldt = -dpiondt*z - pion*s*plasgdt;
-      dpcoulda = -dpionda*z - pion*s*plasgda;
-      dpcouldz = -dpiondz*z - pion*s*plasgdz;
+//       y        = avo*ytot1*kt*(a1 + 0.25/plasg*(b1*x - c1/x));
+//       decouldd = y * plasgdd;
+//       decouldt = y * plasgdt + ecoul/temp;
+//       decoulda = y * plasgda - ecoul/abar;
+//       decouldz = y * plasgdz;
 
-      s        = 3.0/den;
-      decouldd = s * dpcouldd - ecoul/den;
-      decouldt = s * dpcouldt;
-      decoulda = s * dpcoulda;
-      decouldz = s * dpcouldz;
+//       y        = third * den;
+//       dpcouldd = third * ecoul + y*decouldd;
+//       dpcouldt = y * decouldt;
+//       dpcoulda = y * decoulda;
+//       dpcouldz = y * decouldz;
 
-      s        = -avo*kerg/(abar*plasg)*(1.5*c2*x-a2*(b2-1.0)*y);
-      dscouldd = s * plasgdd;
-      dscouldt = s * plasgdt;
-      dscoulda = s * plasgda - scoul/abar;
-      dscouldz = s * plasgdz;
-    }
+//       y        = -avo*kerg/(abar*plasg)*(0.75*b1*x+1.25*c1/x+d1);
+//       dscouldd = y * plasgdd;
+//       dscouldt = y * plasgdt;
+//       dscoulda = y * plasgda - scoul/abar;
+//       dscouldz = y * plasgdz;
 
-    x   = prad + pion + pele + pcoul;
-    y   = erad + eion + eele + ecoul;
-    //z   = srad + sion + sele + scoul;
+//     // yakovlev & shalybkov 1989 equations 102, 103, 104
+//     } else { // (plasg < 1.0)
+//       x        = plasg*std::sqrt(plasg);
+//       y        = std::pow(plasg, b2);
+//       z        = c2 * x - third * a2 * y;
+//       pcoul    = -pion * z;
+//       ecoul    = 3.0 * pcoul/den;
+//       scoul    = -avo/abar*kerg*(c2*x -a2*(b2-1.0)/b2*y);
 
-    if ((x < 0.0) || (y < 0.0)) {
-      pcoul    = 0.0;
-      dpcouldd = 0.0;
-      dpcouldt = 0.0;
-      dpcoulda = 0.0;
-      dpcouldz = 0.0;
-      ecoul    = 0.0;
-      decouldd = 0.0;
-      decouldt = 0.0;
-      decoulda = 0.0;
-      decouldz = 0.0;
-      scoul    = 0.0;
-      dscouldd = 0.0;
-      dscouldt = 0.0;
-      dscoulda = 0.0;
-      dscouldz = 0.0;
-    }
+//       s        = 1.5*c2*x/plasg - third*a2*b2*y/plasg;
+//       dpcouldd = -dpiondd*z - pion*s*plasgdd;
+//       dpcouldt = -dpiondt*z - pion*s*plasgdt;
+//       dpcoulda = -dpionda*z - pion*s*plasgda;
+//       dpcouldz = -dpiondz*z - pion*s*plasgdz;
+
+//       s        = 3.0/den;
+//       decouldd = s * dpcouldd - ecoul/den;
+//       decouldt = s * dpcouldt;
+//       decoulda = s * dpcoulda;
+//       decouldz = s * dpcouldz;
+
+//       s        = -avo*kerg/(abar*plasg)*(1.5*c2*x-a2*(b2-1.0)*y);
+//       dscouldd = s * plasgdd;
+//       dscouldt = s * plasgdt;
+//       dscoulda = s * plasgda - scoul/abar;
+//       dscouldz = s * plasgdz;
+//     }
+
+//     x   = prad + pion + pele + pcoul;
+//     y   = erad + eion + eele + ecoul;
+//     //z   = srad + sion + sele + scoul;
+
+//     if ((x < 0.0) || (y < 0.0)) {
+//       pcoul    = 0.0;
+//       dpcouldd = 0.0;
+//       dpcouldt = 0.0;
+//       dpcoulda = 0.0;
+//       dpcouldz = 0.0;
+//       ecoul    = 0.0;
+//       decouldd = 0.0;
+//       decouldt = 0.0;
+//       decoulda = 0.0;
+//       decouldz = 0.0;
+//       scoul    = 0.0;
+//       dscouldd = 0.0;
+//       dscouldt = 0.0;
+//       dscoulda = 0.0;
+//       dscouldz = 0.0;
+//     }
+
+    pcoul    = 0.0;
+    dpcouldd = 0.0;
+    dpcouldt = 0.0;
+    dpcoulda = 0.0;
+    dpcouldz = 0.0;
+    ecoul    = 0.0;
+    decouldd = 0.0;
+    decouldt = 0.0;
+    decoulda = 0.0;
+    decouldz = 0.0;
+    scoul    = 0.0;
+    dscouldd = 0.0;
+    dscouldt = 0.0;
+    dscoulda = 0.0;
+    dscouldz = 0.0;
+
 
     // sum all the gas components
     Real pgas    = pion + pele + pcoul;
@@ -714,7 +775,7 @@ class HelmTable {
       // printf("%12.4e %12.4e %12.4e %12.4e %12.4e\n", logT, dlogT, T, degas_dT, error);
       
       if (nlim-- < 0) {
-	printf("at rho = %.4e, logT, dlogT = %.4e, %.4e,\n", rho, logT, dlogT);
+	printf("at rho = %.4e, logT, dlogT = %.4e, %.4e, error=%.4e\n", rho, logT, dlogT, f0);
 	// for(int i=0; i<100; i++){
 	//   Real T= std::exp( std::log(t(0)) + (std::log(t(jmax-1)) - std::log(t(0)))*(Real)i/(Real)(100-1));
 	//   HelmLookupRhoT(rho, T, ye, abar, OutData);
@@ -731,6 +792,8 @@ class HelmTable {
 
       logT = logT + dlogT*fac;
     }
+    Real T = std::exp(logT);
+    HelmLookupRhoT(rho, T, ye, abar, OutData);
     //std::exit(0);
     
   }
@@ -780,9 +843,11 @@ class HelmTable {
       }
       
       //printf("%12.4e %12.4e %12.4e %12.4e %12.4e\n", logT, dlogT, T, dpres_dT, error);
-      
+      if (nlim < nmax/3){
+	printf("%12.4e %12.4e %12.4e %12.4e %12.4e\n", logT, dlogT, T, dpres_dT, error);
+      }
       if (nlim-- < 0) {
-        printf("at rho = %.4e, logT, dlogT = %.4e, %.4e,\n", rho, logT, dlogT);
+	printf("at rho = %.4e, logT, dlogT = %.4e, %.4e, error=%.4e\n", rho, logT, dlogT, f0);
 	// for(int i=0; i<100; i++){
 	//   Real T= std::exp( std::log(t(0)) + (std::log(t(jmax-1)) - std::log(t(0)))*(Real)i/(Real)(100-1));
 	//   HelmLookupRhoT(rho, T, ye, abar, OutData);
@@ -799,6 +864,10 @@ class HelmTable {
 
       logT = logT + dlogT*fac;
     }
+
+    Real T = std::exp(logT);
+    HelmLookupRhoT(rho, T, ye, abar, OutData);
+
     //std::exit(0);
     
   }
@@ -1073,13 +1142,13 @@ Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real* s) {
 #endif
   
   // subtract mass-excess contribution
-  Real egas_therm = egas*egas_unit_ - mexc*MeV_to_erg * avo * rho;
+  Real egas_int = egas*egas_unit_ - mexc*MeV_to_erg * avo * rho;
   
   // printf("PresFromRhoEg: rho=%12.4e, egas=%12.4e, temp=%12.4e, ye=%12.4e, abar=%12.4e\n", rho, egas, temp, ye, abar);
-  // printf("PresFromRhoEg: egas_therm=%12.4e, egas_unit=%12.4e\n", egas_therm, egas_unit_);
+  // printf("PresFromRhoEg: egas_int=%12.4e, egas_unit=%12.4e\n", egas_int, egas_unit_);
 
-  //phelm->HelmInvert(rho * rho_unit_, temp, ye, abar, egas_therm, 0, EosData);
-  phelm->HelmInvertEgas(rho * rho_unit_, temp, ye, abar, egas_therm, EosData);
+  //phelm->HelmInvert(rho * rho_unit_, temp, ye, abar, egas_int, 0, EosData);
+  phelm->HelmInvertEgas(rho * rho_unit_, temp, ye, abar, egas_int, EosData);
   LastTemp = EosData(5);
   if (NSCALARS > 0 && i_temp >= 0) {
     s[i_temp] = LastTemp * rho;
@@ -1185,7 +1254,7 @@ Real EquationOfState::TempFromRhoEg(Real rho, Real egas, Real* s) {
   Real egas_int = egas*egas_unit_ - mexc*MeV_to_erg * avo * rho;
   
   // printf("PresFromRhoEg: rho=%12.4e, egas=%12.4e, temp=%12.4e, ye=%12.4e, abar=%12.4e\n", rho, egas, temp, ye, abar);
-  // printf("PresFromRhoEg: egas_therm=%12.4e, egas_unit=%12.4e\n", egas_therm, egas_unit_);
+  // printf("PresFromRhoEg: egas_int=%12.4e, egas_unit=%12.4e\n", egas_int, egas_unit_);
   
   phelm->HelmInvertEgas(rho * rho_unit_, temp, ye, abar, egas_int, EosData);
   Real T = EosData(5);
@@ -1495,5 +1564,5 @@ void EquationOfState::InitEosConstants(ParameterInput *pin) {
 // new function to call helmholtz EOS outside helmholtz.cpp file
 void EquationOfState::HelmLookupRhoT(Real rho, Real temp, Real ye, Real abar,
 		    AthenaArray<Real> &OutData){
-  phelm->HelmLookupRhoT(rho, LastTemp, ye, abar, OutData);
+  phelm->HelmLookupRhoT(rho, temp, ye, abar, OutData);
 }
