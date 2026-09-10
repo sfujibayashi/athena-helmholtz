@@ -1110,7 +1110,7 @@ class HelmTable {
 namespace {
   HelmTable* phelm = nullptr;
   thread_local AthenaArray<Real> EosData(HelmholtzConstants::nOut);  
-  Real LastTemp;
+  thread_local Real LastTemp = -1.0;
   Real fixed_ye = -1.0;
   Real fixed_abar = -1.0;
   Real fixed_mexc = -1.0e99;
@@ -1128,7 +1128,7 @@ Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real* s) {
   
   Real ye = fixed_ye;
   Real abar = fixed_abar;
-  Real temp = LastTemp;
+  Real temp = (LastTemp > 0.0) ? LastTemp : std::pow(10.0, 0.5 * (phelm->tlo + phelm->thi));
   Real mexc = fixed_mexc;
   if (NSCALARS > 0 && i_ye >= 0) {
     ye = s[i_ye] / rho;
@@ -1174,7 +1174,7 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r) {
   //std::cout << "EgasFromRhoP" << '\n';
   Real ye = fixed_ye;
   Real abar = fixed_abar;
-  Real temp = LastTemp;
+  Real temp = (LastTemp > 0.0) ? LastTemp : std::pow(10.0, 0.5 * (phelm->tlo + phelm->thi));
   Real mexc = fixed_mexc;
 
   if (NSCALARS > 0 && i_ye >= 0) {
@@ -1198,7 +1198,7 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r) {
 #endif
   //phelm->HelmInvert(rho * rho_unit_, LastTemp, ye, abar, pres * egas_unit_, 2, EosData);
   // printf("in EgasFromRhoP\n");
-  phelm->HelmInvertPres(rho * rho_unit_, LastTemp, ye, abar, pres * egas_unit_, EosData);
+  phelm->HelmInvertPres(rho * rho_unit_, temp, ye, abar, pres * egas_unit_, EosData);
   LastTemp = EosData(5);
   if (NSCALARS > 0 && i_temp >= 0) {
     r[i_temp] = LastTemp;
@@ -1217,7 +1217,7 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r) {
   //std::cout << "AsqFromRhoP" << '\n';
   Real ye = fixed_ye;
   Real abar = fixed_abar;
-  Real temp = LastTemp;
+  Real temp = (LastTemp > 0.0) ? LastTemp : std::pow(10.0, 0.5 * (phelm->tlo + phelm->thi));
   if (NSCALARS > 0 && i_ye >= 0) {
     ye = r[i_ye];
   }
@@ -1236,7 +1236,7 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r) {
 #endif
   // phelm->HelmInvert(rho * rho_unit_, LastTemp, ye, abar, pres * egas_unit_, 2, EosData);
   // printf("in AsqFromRhoP\n");
-  phelm->HelmInvertPres(rho * rho_unit_, LastTemp, ye, abar, pres * egas_unit_, EosData);
+  phelm->HelmInvertPres(rho * rho_unit_, temp, ye, abar, pres * egas_unit_, EosData);
   LastTemp = EosData(5);
   return EosData(4) * inv_vsqr_unit_;
 }
@@ -1248,7 +1248,7 @@ Real EquationOfState::TempFromRhoEg(Real rho, Real egas, Real* s) {
   
   Real ye = fixed_ye;
   Real abar = fixed_abar;
-  Real temp = LastTemp;
+  Real temp = (LastTemp > 0.0) ? LastTemp : std::pow(10.0, 0.5 * (phelm->tlo + phelm->thi));
   Real mexc = fixed_mexc;
   if (NSCALARS > 0 && i_ye >= 0) {
     ye = s[i_ye] / rho;
@@ -1313,7 +1313,7 @@ Real EquationOfState::TFromRhoEgas(Real rho, Real egas) {
 //  \brief Initialize constants for EOS
 void EquationOfState::InitEosConstants(ParameterInput *pin) {
   if (!phelm) phelm = new HelmTable(pin, ptable);
-  LastTemp = std::pow(10.0, 0.5 * (phelm->tlo + phelm->thi));
+  
   if (pin->DoesParameterExist("hydro", "helm_abar")) {
     fixed_abar = pin->GetReal("hydro", "helm_abar");
   }
