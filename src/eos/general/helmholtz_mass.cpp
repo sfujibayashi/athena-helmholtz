@@ -119,7 +119,6 @@ class HelmTable {
     nmax = pin->GetOrAddInteger("hydro", "helm_nmax", 1000);
     Tfloor = pin->GetOrAddBoolean("hydro", "helm_Tfloor", false);
 
-    fi.NewAthenaArray(36);
     // helmholtz free energy and its derivatives
     f.InitWithShallowSlice(ptable->table.data, 3, 0, 1);
     fd.InitWithShallowSlice(ptable->table.data, 3, 1, 1);
@@ -146,6 +145,9 @@ class HelmTable {
   void HelmLookupRhoT(Real den, Real temp, Real ye, Real abar,
                       AthenaArray<Real> &OutData) {
     using namespace HelmholtzConstants;  // NOLINT (build/namespace)
+
+    static thread_local AthenaArray<Real> fi(36);
+
     Real din = ye * den;
     Real ytot1 = 1.0/abar;
     Real zbar = ye * abar;
@@ -1011,7 +1013,7 @@ class HelmTable {
   Real prec;
   int nmax;
   bool Tfloor;
-  AthenaArray<Real> f, ft, ftt, fd, fdd, fdt, fddt, fdtt, fddtt, fi;
+  AthenaArray<Real> f, ft, ftt, fd, fdd, fdt, fddt, fdtt, fddtt;
   AthenaArray<Real> dpdf, dpdft, dpdfd, dpdfdt;
   AthenaArray<Real> xf, xft, xfd, xfdt;
   AthenaArray<Real> t, d, dt_sav, dt2i_sav, dti_sav, ddi_sav, dd_sav, dd2_sav, dt2_sav,
