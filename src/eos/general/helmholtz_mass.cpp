@@ -733,7 +733,7 @@ class HelmTable {
 		      AthenaArray<Real> &OutData) {
     
     HelmLookupRhoT(rho, t(0), ye, abar, OutData);
-    Real egas_min = OutData(0)*(1.0 - 1.0e-8);
+    Real egas_min = OutData(0)*(1.0-prec);
     
     if(egas <= egas_min){
       HelmLookupRhoT(rho, t(0), ye, abar, OutData);
@@ -803,9 +803,10 @@ class HelmTable {
 		      AthenaArray<Real> &OutData) {
     
     HelmLookupRhoT(rho, t(0), ye, abar, OutData);
-    Real pres_min = OutData(2)*(1.0 - 1.0e-8);
+    Real pres_min = OutData(2)*(1.0 - prec);
+    Real logT_min = std::log(t(0));
     
-    if(pres <= pres_min){
+    if(pres <= pres_min*(1.0+2.0*prec)){
       HelmLookupRhoT(rho, t(0), ye, abar, OutData);
       return;
     }
@@ -821,6 +822,8 @@ class HelmTable {
     // }
     //std::exit(0);
 
+    // printf("%25.16e %25.16e %25.16e %25.16e\n", pres_min, pres, pres-pres_min, GuessTemp);
+    
     int nlim = nmax;
     
     Real logT = std::log(GuessTemp);
@@ -842,10 +845,10 @@ class HelmTable {
 	fac = fac / (std::abs(dlogT)/1.0);
       }
       
-      //printf("%12.4e %12.4e %12.4e %12.4e %12.4e\n", logT, dlogT, T, dpres_dT, error);
-      if (nlim < nmax/3){
-	printf("%12.4e %12.4e %12.4e %12.4e %12.4e\n", logT, dlogT, T, dpres_dT, error);
-      }
+      //printf("%5d %15.7e %15.7e %15.7e %15.7e %15.7e\n",nmax-nlim, logT, dlogT, T, dpres_dT, error);
+      // if (nlim < nmax/3){
+      // 	printf("%12.4e %12.4e %12.4e %12.4e %12.4e\n", logT, dlogT, T, dpres_dT, error);
+      // }
       if (nlim-- < 0) {
 	printf("at rho = %.4e, logT, dlogT = %.4e, %.4e, error=%.4e\n", rho, logT, dlogT, f0);
 	// for(int i=0; i<100; i++){
@@ -863,6 +866,9 @@ class HelmTable {
       }
 
       logT = logT + dlogT*fac;
+      if(logT < logT_min){
+	logT = logT_min;
+      }
     }
 
     Real T = std::exp(logT);
@@ -1187,6 +1193,7 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r) {
   }
 #endif
   //phelm->HelmInvert(rho * rho_unit_, LastTemp, ye, abar, pres * egas_unit_, 2, EosData);
+  // printf("in EgasFromRhoP\n");
   phelm->HelmInvertPres(rho * rho_unit_, LastTemp, ye, abar, pres * egas_unit_, EosData);
   LastTemp = EosData(5);
   if (NSCALARS > 0 && i_temp >= 0) {
@@ -1223,6 +1230,7 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r) {
   }
 #endif
   // phelm->HelmInvert(rho * rho_unit_, LastTemp, ye, abar, pres * egas_unit_, 2, EosData);
+  // printf("in AsqFromRhoP\n");
   phelm->HelmInvertPres(rho * rho_unit_, LastTemp, ye, abar, pres * egas_unit_, EosData);
   LastTemp = EosData(5);
   return EosData(4) * inv_vsqr_unit_;
@@ -1566,3 +1574,5 @@ void EquationOfState::HelmLookupRhoT(Real rho, Real temp, Real ye, Real abar,
 		    AthenaArray<Real> &OutData){
   phelm->HelmLookupRhoT(rho, temp, ye, abar, OutData);
 }
+
+
