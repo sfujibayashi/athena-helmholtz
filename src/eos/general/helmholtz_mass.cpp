@@ -1220,7 +1220,8 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r) {
     ye = r[i_ye];
   }
   if (NSCALARS > 0 && i_ytot >= 0) {
-    abar = r[i_ytot];
+    Real ytot = r[i_ytot];
+    abar = 1.0 / ytot;
   }
   if (NSCALARS > 0 && i_temp >= 0) {
     temp = r[i_temp];
@@ -1251,7 +1252,8 @@ Real EquationOfState::TempFromRhoEg(Real rho, Real egas, Real* s) {
     ye = s[i_ye] / rho;
   }
   if (NSCALARS > 0 && i_ytot >= 0) {
-    abar = s[i_ytot] / rho;
+    Real ytot = s[i_ytot] / rho;
+    abar = 1.0 / ytot;
   }
   if (NSCALARS > 0 && i_temp >= 0) {
     temp = s[i_temp] / rho;
