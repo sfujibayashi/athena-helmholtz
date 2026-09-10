@@ -84,8 +84,8 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   std::cout << helm::i_ye <<" "<<helm::i_abar<<" "<<helm::i_temp<<" "<<helm::i_mexc<<std::endl;
 }
 
-void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
-  
+void MeshBlock::UserWorkInLoop(void) {
+
   for(int k=ks; k<=ke; k++) {
     for(int j=js; j<=je; j++) {
       for(int i=is; i<=ie; i++) {
@@ -96,13 +96,69 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
 	AthenaArray<Real> out;
 	out.NewAthenaArray(8);
 	peos->HelmLookupRhoT(rho, temp, ye, abar, out);
-	
 	Real entr = out(7);
+	//printf("%12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e\n",rho,temp,ye,abar,entr,out(0),out(2),out(5));
 	user_out_var(uov::i_entr,k,j,i) = entr;
       }
     }
   }
+  
+  bool isok;
+  isok = true;
+  // printf("%12.4e %12.4e\n", phydro->u(IEN,0,0,0), phydro->u(IEN,0,0,0)/phydro->u(IDN,0,0,0));
+  for(int k=ks; k<=ke; k++) {
+    for(int j=js; j<=je; j++) {
+      for(int i=is; i<=ie; i++) {
+	for (int n=0; n<NWAVE; n++) {
+	  if(not isfinite(phydro->u(n,j,k,i))){
+	    //printf("hydro, %3d%3d\n",n,i);
+	    isok=false;
+	  }
+	}
+	
+	for (int n=0; n<NSCALARS; n++) {
+	  if(not isfinite(pscalars->r(n,j,k,i))){
+	    //printf("scalar, %3d%3d\n",n,i);
+	    isok=false;
+	  }
+	}
+	
+      }
+    }
+  }
+
+  // int k=ks;
+  // int j=js;
+  // for(int i=is; i<=ie; i++) {
+  //   printf("%4d %12.4e",i,pcoord->x1v(i));
+  //   for (int n=0; n<NWAVE; n++) {
+  //     printf("%12.4e",phydro->u(n,j,k,i));
+  //   }
+  //   for (int n=0; n<NSCALARS; n++) {
+  //     printf("%12.4e",pscalars->s(n,j,k,i));
+  //   }
+
+  //   printf("  ");
+  //   for (int n=0; n<NWAVE; n++) {
+  //     printf("%12.4e",phydro->w(n,j,k,i));
+  //   }
+  //   for (int n=0; n<NSCALARS; n++) {
+  //     printf("%12.4e",pscalars->r(n,j,k,i));
+  //   }
+  //   printf("\n");
+  // }
+
+  if(not isok){
+    std::exit(0);
+
+  }
+
 }
+
+// void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
+  
+
+// }
 
 
 //========================================================================================
@@ -112,13 +168,13 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real rout = pin->GetReal("problem", "rout");
-  Real rin  = pin->GetOrAddReal("problem", "rin", 0.0);
+  Real rin  = pin->GetReal("problem", "rin");
   
-  Real Mej  = pin->GetOrAddReal("problem", "ejecta_mass", 1.0);
-  Real Vinf = pin->GetOrAddReal("problem", "asymptotic_velocity", 1.0);
-  Real mexc = pin->GetOrAddReal("problem", "mass_excess", 1.0);
-  Real abar = pin->GetOrAddReal("problem", "mass_number", 1.0);
-  Real ye   = pin->GetOrAddReal("problem", "ye", 1.0);
+  Real Mej  = pin->GetReal("problem", "ejecta_mass");
+  Real Vinf = pin->GetReal("problem", "asymptotic_velocity");
+  Real mexc = pin->GetReal("problem", "mass_excess");
+  Real abar = pin->GetReal("problem", "mass_number");
+  Real ye   = pin->GetReal("problem", "ye");
   
   // get coordinates of center of blast, and convert to Cartesian if necessary
   Real x1_0   = pin->GetOrAddReal("problem", "x1_0", 0.0);
@@ -174,20 +230,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
         }
 
-        Real rho, eth;
+        Real rho, eth, v1;
         if (rin < rad and rad < rout) {
 	  rho = rho_ej;
 	  eth = eth_ej;
+	  v1  = (rad/rout)*Vinf;
 	} else {
 	  rho = rho_ej*1e-12;
 	  eth = eth_ej*1e-12;
+	  v1  = 0.0;
         }
+	//v1 = 0.0;
 	
         phydro->u(IDN,k,j,i) = rho;
-        phydro->u(IM1,k,j,i) = 0.0;
+        phydro->u(IM1,k,j,i) = rho*v1;
         phydro->u(IM2,k,j,i) = 0.0;
         phydro->u(IM3,k,j,i) = 0.0;
-        phydro->u(IEN,k,j,i) = eth;
+        phydro->u(IEN,k,j,i) = eth + 0.5*rho*v1*v1;
 
       }
     }
@@ -263,31 +322,35 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  
-  // derive temperature
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
-      for (int i=is; i<=ie; ++i) {
-	Real rho  = phydro->u(IDN,k,j,i);
-	Real egas = phydro->u(IEN,k,j,i);
-	Real s_cell[NSCALARS];
-	for (int n=0; n<NSCALARS; ++n) {
-          s_cell[n] = pscalars->s(n,k,j,i);
-	}
-	s_cell[helm::i_temp] = 1e10*phydro->u(IDN,k,j,i);
-	// std::cout << i << " " << rho << " "<< egas  << std::endl;
-	// std::cout << s[0]/rho << " " << s[1]/rho << " "<< s[2]/rho <<" "<< s[3]/rho << std::endl;
-	// std::cout << pscalars->s(0,k,j,i)/rho << " " << pscalars->s(1,k,j,i)/rho << " "<< pscalars->s(2,k,j,i)/rho <<" "<< pscalars->s(3,k,j,i)/rho << std::endl;
-	
-	Real temp = peos->TempFromRhoEg(rho, egas, s_cell);
-	pscalars->s(helm::i_temp,k,j,i) = temp * phydro->u(IDN,k,j,i);
-	
-	std::cout << pcoord->x1v(i) << " " << rho << " " << temp << " " <<egas << std::endl;	
 
+  {
+    using namespace HelmholtzConstants;
+    
+    // derive temperature
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+	for (int i=is; i<=ie; ++i) {
+	  Real rho  = phydro->u(IDN,k,j,i);
+	  Real egas = phydro->u(IEN,k,j,i);
+	  Real s_cell[NSCALARS];
+	  for (int n=0; n<NSCALARS; ++n) {
+	    s_cell[n] = pscalars->s(n,k,j,i);
+	  }
+	  s_cell[helm::i_temp] = 1e10*phydro->u(IDN,k,j,i);
+	  // std::cout << i << " " << rho << " "<< egas  << std::endl;
+	  // std::cout << s[0]/rho << " " << s[1]/rho << " "<< s[2]/rho <<" "<< s[3]/rho << std::endl;
+	  // std::cout << pscalars->s(0,k,j,i)/rho << " " << pscalars->s(1,k,j,i)/rho << " "<< pscalars->s(2,k,j,i)/rho <<" "<< pscalars->s(3,k,j,i)/rho << std::endl;
+	  
+	  Real temp = peos->TempFromRhoEg(rho, egas, s_cell);
+	  pscalars->s(helm::i_temp,k,j,i) = temp * phydro->u(IDN,k,j,i);
+	  
+	  printf("%12.4e%12.4e%12.4e%12.4e%12.4e%12.4e\n", pcoord->x1v(i), rho, temp, egas, egas/rho, s_cell[helm::i_mexc]*MeV_to_erg*avo/rho);
+	  
+	}
       }
     }
   }
-  // std::exit(0);
+
 
 }
 
