@@ -276,7 +276,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
 
-    // Abar
+    // Ytot = 1/Abar
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
 	for (int i=is; i<=ie; ++i) {
