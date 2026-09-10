@@ -1151,7 +1151,7 @@ Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real* s) {
 #endif
   
   // subtract mass-excess contribution
-  Real egas_int = egas*egas_unit_ - mexc*MeV_to_erg * avo * rho;
+  Real egas_int = egas*egas_unit_ - mexc*MeV_to_erg * avo * rho*rho_unit_;
   
   // printf("PresFromRhoEg: rho=%12.4e, egas=%12.4e, temp=%12.4e, ye=%12.4e, abar=%12.4e\n", rho, egas, temp, ye, abar);
   // printf("PresFromRhoEg: egas_int=%12.4e, egas_unit=%12.4e\n", egas_int, egas_unit_);
@@ -1204,7 +1204,7 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r) {
     r[i_temp] = LastTemp;
   }
   // add mass-excess contribution
-  Real egas = EosData(0) + mexc*MeV_to_erg * avo * rho;
+  Real egas = EosData(0) + mexc*MeV_to_erg * avo * rho*rho_unit_;
   
   return egas * inv_egas_unit_;
 }
@@ -1265,7 +1265,7 @@ Real EquationOfState::TempFromRhoEg(Real rho, Real egas, Real* s) {
   }
   
   // subtract mass-excess contribution
-  Real egas_int = egas*egas_unit_ - mexc*MeV_to_erg * avo * rho;
+  Real egas_int = egas*egas_unit_ - mexc*MeV_to_erg * avo * rho*rho_unit_;
   
   // printf("PresFromRhoEg: rho=%12.4e, egas=%12.4e, temp=%12.4e, ye=%12.4e, abar=%12.4e\n", rho, egas, temp, ye, abar);
   // printf("PresFromRhoEg: egas_int=%12.4e, egas_unit=%12.4e\n", egas_int, egas_unit_);
