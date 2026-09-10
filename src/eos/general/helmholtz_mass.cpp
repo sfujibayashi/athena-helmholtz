@@ -153,9 +153,9 @@ class HelmTable {
     Real zbar = ye * abar;
     //hash locate this temperature and density
     int jat = static_cast<int>((std::log10(temp) - tlo)*tstpi);
-    jat = std::max(0,std::min(jat,jmax-1));
+    jat = std::max(0,std::min(jat,jmax-2));
     int iat = static_cast<int>((std::log10(din) - dlo)*dstpi);
-    iat = std::max(0,std::min(iat,imax-1));
+    iat = std::max(0,std::min(iat,imax-2));
 #ifdef MYDEBUG
     std::cout << "i,j: " << iat << ", " << jat << '\n';
 #endif
