@@ -1406,7 +1406,7 @@ void EquationOfState::InitEosConstants(ParameterInput *pin) {
 	<< std::endl;
     ATHENA_ERROR(msg);
   }
-  if (fixed_mexc < 0 && i_mexc < -100.0) {
+  if (fixed_mexc < -100.0 && i_mexc < 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in EquationOfState::InitEosConstants" << std::endl
 	<< "either hydro/helm_mexc or hydro/helm_mexc_index must be specified."
