@@ -1113,7 +1113,7 @@ namespace {
   Real fixed_abar = -1.0;
   Real fixed_mexc = -1.0e99;
   int i_ye = -1;
-  int i_abar = -1;
+  int i_ytot = -1;
   int i_temp = -1;
   int i_mexc = -1;
 }
@@ -1131,8 +1131,9 @@ Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real* s) {
   if (NSCALARS > 0 && i_ye >= 0) {
     ye = s[i_ye] / rho;
   }
-  if (NSCALARS > 0 && i_abar >= 0) {
-    abar = s[i_abar] / rho;
+  if (NSCALARS > 0 && i_ytot >= 0) {
+    Real ytot = s[i_ytot] / rho;
+    abar = 1.0/ytot;
   }
   if (NSCALARS > 0 && i_temp >= 0) {
     temp = s[i_temp] / rho;
@@ -1177,8 +1178,9 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r) {
   if (NSCALARS > 0 && i_ye >= 0) {
     ye = r[i_ye];
   }
-  if (NSCALARS > 0 && i_abar >= 0) {
-    abar = r[i_abar];
+  if (NSCALARS > 0 && i_ytot >= 0) {
+    Real ytot = r[i_ytot];
+    abar = 1.0 / ytot;
   }
   if (NSCALARS > 0 && i_temp >= 0) {
     temp = r[i_temp];
@@ -1217,8 +1219,8 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r) {
   if (NSCALARS > 0 && i_ye >= 0) {
     ye = r[i_ye];
   }
-  if (NSCALARS > 0 && i_abar >= 0) {
-    abar = r[i_abar];
+  if (NSCALARS > 0 && i_ytot >= 0) {
+    abar = r[i_ytot];
   }
   if (NSCALARS > 0 && i_temp >= 0) {
     temp = r[i_temp];
@@ -1248,8 +1250,8 @@ Real EquationOfState::TempFromRhoEg(Real rho, Real egas, Real* s) {
   if (NSCALARS > 0 && i_ye >= 0) {
     ye = s[i_ye] / rho;
   }
-  if (NSCALARS > 0 && i_abar >= 0) {
-    abar = s[i_abar] / rho;
+  if (NSCALARS > 0 && i_ytot >= 0) {
+    abar = s[i_ytot] / rho;
   }
   if (NSCALARS > 0 && i_temp >= 0) {
     temp = s[i_temp] / rho;
@@ -1344,19 +1346,19 @@ void EquationOfState::InitEosConstants(ParameterInput *pin) {
     }
   }
   
-  if (pin->DoesParameterExist("hydro", "helm_abar_index")) {
-    i_abar = pin->GetInteger("hydro", "helm_abar_index");
-    if (i_abar < 0 || i_abar >= NSCALARS) {
+  if (pin->DoesParameterExist("hydro", "helm_ytot_index")) {
+    i_ytot = pin->GetInteger("hydro", "helm_ytot_index");
+    if (i_ytot < 0 || i_ytot >= NSCALARS) {
       std::stringstream msg;
       msg << "### FATAL ERROR in EquationOfState::InitEosConstants" << std::endl
-          << "hydro/helm_abar_index must be between 0 and NSCALARS (" << NSCALARS << ")."
+          << "hydro/helm_ytot_index must be between 0 and NSCALARS (" << NSCALARS << ")."
           << std::endl;
       ATHENA_ERROR(msg);
     }
-    if (i_abar == i_ye) {
+    if (i_ytot == i_ye) {
       std::stringstream msg;
       msg << "### FATAL ERROR in EquationOfState::InitEosConstants" << std::endl
-          << "hydro/helm_abar_index must be different from hydro/helm_ye_index."
+          << "hydro/helm_ytot_index must be different from hydro/helm_ye_index."
           << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -1379,10 +1381,10 @@ void EquationOfState::InitEosConstants(ParameterInput *pin) {
           << std::endl;
       ATHENA_ERROR(msg);
     }
-    if (i_mexc == i_abar) {
+    if (i_mexc == i_ytot) {
       std::stringstream msg;
       msg << "### FATAL ERROR in EquationOfState::InitEosConstants" << std::endl
-          << "hydro/helm_mexc_index must be different from hydro/helm_abar_index."
+          << "hydro/helm_mexc_index must be different from hydro/helm_ytot_index."
           << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -1395,10 +1397,10 @@ void EquationOfState::InitEosConstants(ParameterInput *pin) {
 	<< std::endl;
     ATHENA_ERROR(msg);
   }
-  if (fixed_abar < 0 && i_abar < 0) {
+  if (fixed_abar < 0 && i_ytot < 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in EquationOfState::InitEosConstants" << std::endl
-	<< "either hydro/helm_abar or hydro/helm_abar_index must be specified."
+	<< "either hydro/helm_abar or hydro/helm_ytot_index must be specified."
 	<< std::endl;
     ATHENA_ERROR(msg);
   }
@@ -1428,10 +1430,10 @@ void EquationOfState::InitEosConstants(ParameterInput *pin) {
           << std::endl;
       ATHENA_ERROR(msg);
     }
-    if (i_temp == i_abar) {
+    if (i_temp == i_ytot) {
       std::stringstream msg;
       msg << "### FATAL ERROR in EquationOfState::InitEosConstants" << std::endl
-          << "hydro/helm_temp_index must be different from hydro/helm_abar_index."
+          << "hydro/helm_temp_index must be different from hydro/helm_ytot_index."
           << std::endl;
       ATHENA_ERROR(msg);
     }
