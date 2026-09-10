@@ -1109,7 +1109,7 @@ class HelmTable {
 
 namespace {
   HelmTable* phelm = nullptr;
-  AthenaArray<Real> EosData;
+  thread_local AthenaArray<Real> EosData(HelmholtzConstants::nOut);  
   Real LastTemp;
   Real fixed_ye = -1.0;
   Real fixed_abar = -1.0;
@@ -1313,7 +1313,6 @@ Real EquationOfState::TFromRhoEgas(Real rho, Real egas) {
 //  \brief Initialize constants for EOS
 void EquationOfState::InitEosConstants(ParameterInput *pin) {
   if (!phelm) phelm = new HelmTable(pin, ptable);
-  EosData.NewAthenaArray(HelmholtzConstants::nOut);
   LastTemp = std::pow(10.0, 0.5 * (phelm->tlo + phelm->thi));
   if (pin->DoesParameterExist("hydro", "helm_abar")) {
     fixed_abar = pin->GetReal("hydro", "helm_abar");
