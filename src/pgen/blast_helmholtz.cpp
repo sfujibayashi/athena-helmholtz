@@ -64,7 +64,7 @@ namespace helm{
 
   //HelmTable* phelm = nullptr;
   int i_ye = -1;
-  int i_abar = -1;
+  int i_ytot = -1;
   int i_temp = -1;
   int i_mexc = -1;
 }
@@ -78,10 +78,10 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   
   //if (!helm::phelm) helm::phelm = new HelmTable(pin, ptable);
   helm::i_ye   = pin->GetInteger("hydro", "helm_ye_index");
-  helm::i_abar = pin->GetInteger("hydro", "helm_abar_index");
+  helm::i_ytot = pin->GetInteger("hydro", "helm_ytot_index");
   helm::i_temp = pin->GetInteger("hydro", "helm_temp_index");
   helm::i_mexc = pin->GetInteger("hydro", "helm_mexc_index");
-  std::cout << helm::i_ye <<" "<<helm::i_abar<<" "<<helm::i_temp<<" "<<helm::i_mexc<<std::endl;
+  std::cout << helm::i_ye <<" "<<helm::i_ytot<<" "<<helm::i_temp<<" "<<helm::i_mexc<<std::endl;
 }
 
 void MeshBlock::UserWorkInLoop(void) {
@@ -92,7 +92,8 @@ void MeshBlock::UserWorkInLoop(void) {
 	Real rho = phydro->u(IDN,k,j,i);
 	Real temp= pscalars->r(helm::i_temp,k,j,i);
 	Real ye  = pscalars->r(helm::i_ye,k,j,i);
-	Real abar= pscalars->r(helm::i_abar,k,j,i);
+	Real ytot= pscalars->r(helm::i_ytot,k,j,i);
+        Real abar= 1.0/ytot;
 	AthenaArray<Real> out;
 	out.NewAthenaArray(8);
 	peos->HelmLookupRhoT(rho, temp, ye, abar, out);
@@ -279,7 +280,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
 	for (int i=is; i<=ie; ++i) {
-	  pscalars->s(helm::i_abar,k,j,i) = abar * phydro->u(IDN,k,j,i);
+          Real ytot = 1.0 / abar;
+	  pscalars->s(helm::i_ytot,k,j,i) = ytot * phydro->u(IDN,k,j,i);
 	}
       }
     }
