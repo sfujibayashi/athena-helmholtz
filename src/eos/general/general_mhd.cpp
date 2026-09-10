@@ -124,8 +124,9 @@ void EquationOfState::ConservedToPrimitive(
           s_cell[n] = s(n,k,j,i);
         }
 
+        Real e_mexc = MassExcEnergyDensity(s_cell);
         // apply pressure/energy floor, correct total energy
-        u_e = (u_e - ke - pb > energy_floor_) ?  u_e : energy_floor_ + ke + pb;
+        u_e = (u_e - ke -e_mexc - pb > energy_floor_) ?  u_e : energy_floor_ + ke + e_mexc + pb;
         // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point due
         //       to floating point errors/catastrophic cancellation
         w_p = PresFromRhoEg(u_d, u_e - ke - pb, s_cell);

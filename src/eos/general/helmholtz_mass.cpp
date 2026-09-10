@@ -1581,3 +1581,15 @@ void EquationOfState::HelmLookupRhoT(Real rho, Real temp, Real ye, Real abar,
 }
 
 
+Real EquationOfState::MassExcEnergyDensity(const Real* s){
+  using namespace HelmholtzConstants;  // NOLINT (build/namespace)
+
+  if (NSCALARS > 0 && i_mexc >= 0) {
+    // s[i_mexc] = rho_code * mexc [code density * MeV/baryon]
+    return s[i_mexc] * MeV_to_erg * avo
+      * rho_unit_ * inv_egas_unit_;
+  }
+  
+  return rho * fixed_mexc * MeV_to_erg * avo
+    * rho_unit_ * inv_egas_unit_;
+}
