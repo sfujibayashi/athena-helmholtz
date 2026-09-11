@@ -133,11 +133,13 @@ void EquationOfState::ConservedToPrimitive(
 #else
         Real e_mexc = 0.0;
 #endif
-        // apply pressure/energy floor, correct total energy
-        u_e = (u_e - ke - e_mexc> energy_floor_) ?  u_e : energy_floor_ + ke + e_mexc;
-        // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point due
-        //       to floating point errors/catastrophic cancellation
-        w_p = PresFromRhoEg(u_d, u_e - ke, s_cell);
+        Real egas = u_e - ke;
+        if (egas - e_mexc <= energy_floor_) {
+          egas = energy_floor_ + e_mexc;
+          u_e = egas + ke;
+        }
+        
+        w_p = PresFromRhoEg(u_d, egas, s_cell);
 	
         for (int n=0; n<NSCALARS; ++n) {
           Real& s_n = s(n,k,j,i);
