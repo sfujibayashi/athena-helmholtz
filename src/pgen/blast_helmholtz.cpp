@@ -69,6 +69,10 @@ namespace helm{
   int i_mexc = -1;
 }
 
+namespace tracer {
+  constexpr int i_r0 = 4;
+}
+
 namespace uov{
   int i_entr = 0;
 }
@@ -82,6 +86,24 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   helm::i_temp = pin->GetInteger("hydro", "helm_temp_index");
   helm::i_mexc = pin->GetInteger("hydro", "helm_mexc_index");
   std::cout << helm::i_ye <<" "<<helm::i_ytot<<" "<<helm::i_temp<<" "<<helm::i_mexc<<std::endl;
+
+  if (tracer::i_r0 >= NSCALARS) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MeshBlock::InitUserMeshBlockData\n"
+        << "Not enough passive scalars for initial-radius tracer.\n";
+    ATHENA_ERROR(msg);
+  }
+
+  if (tracer::i_r0 == helm::i_ye   ||
+      tracer::i_r0 == helm::i_ytot ||
+      tracer::i_r0 == helm::i_temp ||
+      tracer::i_r0 == helm::i_mexc) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MeshBlock::InitUserMeshBlockData\n"
+        << "Initial-radius tracer index is equal to either of i_ye, i_ytot, i_temp, i_mexc, which are booked in Helmholtz EOS.\n";
+    ATHENA_ERROR(msg);
+  }
+  
 }
 
 void MeshBlock::UserWorkInLoop(void) {
@@ -150,7 +172,9 @@ void MeshBlock::UserWorkInLoop(void) {
   // }
 
   if(not isok){
-    std::exit(EXIT_FAILURE);
+    std::stringstream msg;
+    msg << "NaN detected.\n";
+    ATHENA_ERROR(msg);
   }
 
 }
@@ -306,7 +330,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 	  } else { //if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
 	    rad = pcoord->x1v(i);
 	  }
-	  pscalars->s(4,k,j,i) = rad*phydro->u(IDN,k,j,i);
+	  pscalars->s(tracer::i_r0,k,j,i) = rad*phydro->u(IDN,k,j,i);
 	}
       }
     }
