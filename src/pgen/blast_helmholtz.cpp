@@ -125,7 +125,7 @@ void MeshBlock::UserWorkInLoop(void) {
 	peos->HelmLookupRhoT(rho, temp, ye, abar, out);
 	Real entr = out(7);
 #else
-        Real entr = std::pow(phydro->w(IPR,k,j,i),gamma_gas)/phydro->w(IDN,k,j,i);
+        Real entr = phydro->w(IPR,k,j,i)/std::pow(phydro->w(IDN,k,j,i),gamma_gas);
 #endif
 	//printf("%12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e\n",rho,temp,ye,abar,entr,out(0),out(2),out(5));
 	user_out_var(uov::i_entr,k,j,i) = entr;
@@ -149,7 +149,7 @@ void MeshBlock::UserWorkInLoop(void) {
 	peos->HelmLookupRhoT(rho, temp, ye, abar, out);
         Real asq = out(4);
 #else
-        Real asq = 0.0;
+        Real asq = gamma_gas*phydro->w(IPR,k,j,i)/phydro->w(IDN,k,j,i);;
 #endif
         if (cs2_max < asq){
           cs2_max=asq;
@@ -377,7 +377,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
   
-#if HELMHOLTZ_EOS_ENABLED
+#if MASS_EXCESS_ENERGY_ENABLED
   {
     using namespace HelmholtzConstants;
     // add mass-excess contribution
