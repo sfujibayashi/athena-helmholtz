@@ -217,6 +217,78 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
 
+
+    Real cp_raw = (ml*tr + mr*tl)/(ml + mr);
+    
+    Real rho_star_l =
+      wli[IDN] * (al - wli[IVX]) / (al - am);
+    Real rho_star_r =
+      wri[IDN] * (ar - wri[IVX]) / (ar - am);
+    
+    bool bad_hllc_star =
+      !std::isfinite(am) ||
+      !std::isfinite(cp_raw) ||
+      !std::isfinite(rho_star_l) ||
+      !std::isfinite(rho_star_r) ||
+      !(al < am && am < ar) ||
+      cp_raw <= 0.0 ||
+      rho_star_l <= 0.0 ||
+      rho_star_r <= 0.0;
+    
+    
+    if (GENERAL_EOS && bad_hllc_star) {
+      al = std::min(wli[IVX] - cl, wri[IVX] - cr);
+      ar = std::max(wli[IVX] + cl, wri[IVX] + cr);
+
+      Real bp_hlle = std::max(ar, Real(0.0));
+      Real bm_hlle = std::min(al, Real(0.0));
+
+      Real vxl_hlle = wli[IVX] - bm_hlle;
+      Real vxr_hlle = wri[IVX] - bp_hlle;
+
+      fl[IDN] = wli[IDN]*vxl_hlle;
+      fr[IDN] = wri[IDN]*vxr_hlle;
+
+      fl[IVX] = wli[IDN]*wli[IVX]*vxl_hlle + wli[IPR];
+      fr[IVX] = wri[IDN]*wri[IVX]*vxr_hlle + wri[IPR];
+
+      fl[IVY] = wli[IDN]*wli[IVY]*vxl_hlle;
+      fr[IVY] = wri[IDN]*wri[IVY]*vxr_hlle;
+
+      fl[IVZ] = wli[IDN]*wli[IVZ]*vxl_hlle;
+      fr[IVZ] = wri[IDN]*wri[IVZ]*vxr_hlle;
+
+      fl[IEN] = el*vxl_hlle + wli[IPR]*wli[IVX];
+      fr[IEN] = er*vxr_hlle + wri[IPR]*wri[IVX];
+
+      Real tmp = 0.0;
+      if (bp_hlle != bm_hlle) {
+        tmp = 0.5*(bp_hlle + bm_hlle)/(bp_hlle - bm_hlle);
+      }
+
+      for (int n=0; n<NHYDRO; ++n) {
+        flxi[n] = 0.5*(fl[n] + fr[n])
+          + (fl[n] - fr[n])*tmp;
+      }
+
+      flx(IDN,k,j,i) = flxi[IDN];
+      flx(ivx,k,j,i) = flxi[IVX];
+      flx(ivy,k,j,i) = flxi[IVY];
+      flx(ivz,k,j,i) = flxi[IVZ];
+      flx(IEN,k,j,i) = flxi[IEN];
+
+      for (int n=0; n<NSCALARS; ++n) {
+        if (flx(IDN,k,j,i) >= 0.0) {
+          sflx(n,k,j,i) = flx(IDN,k,j,i) * rl(n,i);
+        } else {
+          sflx(n,k,j,i) = flx(IDN,k,j,i) * rr(n,i);
+        }
+      }
+
+      continue;
+    }
+
+    
     // No loop-carried dependencies anywhere in this loop
     //    #pragma distribute_point
     //--- Step 6. Compute L/R fluxes along the line bm, bp

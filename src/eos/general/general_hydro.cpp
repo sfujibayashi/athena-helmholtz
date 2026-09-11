@@ -95,6 +95,16 @@ void EquationOfState::ConservedToPrimitive(
 
         // apply density floor, without changing momentum or energy
         if (u_d < density_floor_) {
+
+  printf("DENSITY FLOOR: "
+         "rho_before=%e m1=%e E=%e "
+         "rho_old=%e vx_old=%e "
+         "i=%d j=%d k=%d\n",
+         u_d, u_m1, u_e,
+         prim_old(IDN,k,j,i),
+         prim_old(IVX,k,j,i),
+         i, j, k);
+
           u_d = density_floor_;
           for (int n=0; n<NSCALARS; ++n) {
             Real r_n = r_old(n,k,j,i);

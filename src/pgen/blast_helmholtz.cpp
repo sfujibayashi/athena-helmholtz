@@ -228,6 +228,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real mexc = pin->GetReal("problem", "mass_excess");
   Real abar = pin->GetReal("problem", "mass_number");
   Real ye   = pin->GetReal("problem", "ye");
+
+  Real ratio_atmos   = pin->GetReal("problem", "ratio_atmos");
   
   // get coordinates of center of blast, and convert to Cartesian if necessary
   Real x1_0   = pin->GetOrAddReal("problem", "x1_0", 0.0);
@@ -289,8 +291,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 	  eth = eth_ej;
 	  v1  = (rad/rout)*Vinf;
 	} else {
-	  rho = rho_ej*1e-12;
-	  eth = eth_ej*1e-12;
+	  rho = rho_ej*ratio_atmos;
+	  eth = eth_ej*ratio_atmos;
 	  v1  = 0.0;
         }
 	//v1 = 0.0;
