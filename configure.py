@@ -393,6 +393,8 @@ else:
     definitions['NHYDRO_VARIABLES'] = '5'
     if args['eos'] in ['general/eos_table', 'general/helmholtz', 'general/helmholtz_mass']:
         definitions['EOS_TABLE_ENABLED'] = '1'
+    definitions['MASS_EXCESS_ENERGY_ENABLED'] = \
+        '1' if args['eos'] == 'general/helmholtz_mass' else '0'
 
 if args['eos_table']:
     definitions['EOS_TABLE_ENABLED'] = '1'
