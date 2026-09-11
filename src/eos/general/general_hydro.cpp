@@ -116,7 +116,11 @@ void EquationOfState::ConservedToPrimitive(
           s_cell[n] = s(n,k,j,i);
         }
 
-        Real e_mexc = MassExcEnergyDensity(w_d, s_cell);
+#if MASS_EXCESS_ENERGY_ENABLED
+        Real e_mexc = MassExcEnergyDensity(u_d, s_cell);
+#else
+        Real e_mexc = 0.0;
+#endif
         // apply pressure/energy floor, correct total energy
         u_e = (u_e - ke - e_mexc> energy_floor_) ?  u_e : energy_floor_ + ke + e_mexc;
         // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point due
