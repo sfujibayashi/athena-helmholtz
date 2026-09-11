@@ -142,6 +142,19 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       flx(ivz,k,j,i) = flxi[IVZ];
       flx(IEN,k,j,i) = flxi[IEN];
 
+if (i == 15 || i == 16) {
+  printf("HLLE FALLBACK FLUX i=%d "
+         "Frho=%e Fmom=%e FE=%e "
+         "rhoL=%e rhoR=%e vL=%e vR=%e pL=%e pR=%e\n",
+         i,
+         flx(IDN,k,j,i),
+         flx(ivx,k,j,i),
+         flx(IEN,k,j,i),
+         wli[IDN], wri[IDN],
+         wli[IVX], wri[IVX],
+         wli[IPR], wri[IPR]);
+}
+
       for (int n=0; n<NSCALARS; ++n) {
         if (flx(IDN,k,j,i) >= 0.0) {
           sflx(n,k,j,i) = flx(IDN,k,j,i) * rl(n,i);
@@ -155,6 +168,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     //--- Step 3.  Compute sound speed in L,R
 
+Real gl_diag = std::nan("");
+Real gr_diag = std::nan("");
+
+Real geff_l = cl*cl * wli[IDN] / wli[IPR];
+Real geff_r = cr*cr * wri[IDN] / wri[IPR];
+
+
     Real ql, qr;
     if (GENERAL_EOS) {
       if (pmid <= wli[IPR]) {
@@ -163,6 +183,9 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
         Real gl =
           pmy_block->peos->AsqFromRhoP(rhol, pmid, wli + NHYDRO)
           * rhol / pmid;
+
+        gl_diag = gl;
+            
         ql = std::sqrt(1.0 + (gl + 1.0)/(2.0*gl)
                        * (pmid/wli[IPR] - 1.0));
       }
@@ -173,9 +196,19 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
         Real gr =
           pmy_block->peos->AsqFromRhoP(rhor, pmid, wri + NHYDRO)
           * rhor / pmid;
+
+        gr_diag = gr;
+    
         qr = std::sqrt(1.0 + (gr + 1.0)/(2.0*gr)
                        * (pmid/wri[IPR] - 1.0));
       }
+    } else {
+      
+      ql = (pmid <= wli[IPR]) ? 1.0 :
+        std::sqrt(1.0 + (gamma + 1.0) / (2.0 * gamma) * (pmid / wli[IPR]-1.0));
+      qr = (pmid <= wri[IPR]) ? 1.0 :
+        std::sqrt(1.0 + (gamma + 1.0) / (2.0 * gamma) * (pmid / wri[IPR]-1.0));
+      
     }
     
     // if (GENERAL_EOS) {
@@ -196,6 +229,33 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     al = wli[IVX] - cl*ql;
     ar = wri[IVX] + cr*qr;
+
+if (GENERAL_EOS && (i == 15 || i == 16)) {
+  printf(
+    "HLLC i=%d "
+    "rhoL=% .6e rhoR=% .6e "
+    "pL=% .6e pR=% .6e "
+    "vL=% .6e vR=% .6e "
+    "cL=% .6e cR=% .6e "
+    "GeffL=% .6e GeffR=% .6e "
+    "pmid=% .6e umid=% .6e "
+    "rhol=% .6e rhor=% .6e "
+    "gl=% .6e gr=% .6e "
+    "ql=% .6e qr=% .6e "
+    "al=% .6e ar=% .6e\n",
+    i,
+    wli[IDN], wri[IDN],
+    wli[IPR], wri[IPR],
+    wli[IVX], wri[IVX],
+    cl, cr,
+    geff_l, geff_r,
+    pmid, umid,
+    rhol, rhor,
+    gl_diag, gr_diag,
+    ql, qr,
+    al, ar);
+}
+
 
     Real bp = ar > 0.0 ? ar : (TINY_NUMBER);
     Real bm = al < 0.0 ? al : -(TINY_NUMBER);
@@ -225,68 +285,68 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real rho_star_r =
       wri[IDN] * (ar - wri[IVX]) / (ar - am);
     
-    bool bad_hllc_star =
-      !std::isfinite(am) ||
-      !std::isfinite(cp_raw) ||
-      !std::isfinite(rho_star_l) ||
-      !std::isfinite(rho_star_r) ||
-      !(al < am && am < ar) ||
-      cp_raw <= 0.0 ||
-      rho_star_l <= 0.0 ||
-      rho_star_r <= 0.0;
+    // bool bad_hllc_star =
+    //   !std::isfinite(am) ||
+    //   !std::isfinite(cp_raw) ||
+    //   !std::isfinite(rho_star_l) ||
+    //   !std::isfinite(rho_star_r) ||
+    //   !(al < am && am < ar) ||
+    //   cp_raw <= 0.0 ||
+    //   rho_star_l <= 0.0 ||
+    //   rho_star_r <= 0.0;
     
     
-    if (GENERAL_EOS && bad_hllc_star) {
-      al = std::min(wli[IVX] - cl, wri[IVX] - cr);
-      ar = std::max(wli[IVX] + cl, wri[IVX] + cr);
+    // if (GENERAL_EOS && bad_hllc_star) {
+    //   al = std::min(wli[IVX] - cl, wri[IVX] - cr);
+    //   ar = std::max(wli[IVX] + cl, wri[IVX] + cr);
 
-      Real bp_hlle = std::max(ar, Real(0.0));
-      Real bm_hlle = std::min(al, Real(0.0));
+    //   Real bp_hlle = std::max(ar, Real(0.0));
+    //   Real bm_hlle = std::min(al, Real(0.0));
 
-      Real vxl_hlle = wli[IVX] - bm_hlle;
-      Real vxr_hlle = wri[IVX] - bp_hlle;
+    //   Real vxl_hlle = wli[IVX] - bm_hlle;
+    //   Real vxr_hlle = wri[IVX] - bp_hlle;
 
-      fl[IDN] = wli[IDN]*vxl_hlle;
-      fr[IDN] = wri[IDN]*vxr_hlle;
+    //   fl[IDN] = wli[IDN]*vxl_hlle;
+    //   fr[IDN] = wri[IDN]*vxr_hlle;
 
-      fl[IVX] = wli[IDN]*wli[IVX]*vxl_hlle + wli[IPR];
-      fr[IVX] = wri[IDN]*wri[IVX]*vxr_hlle + wri[IPR];
+    //   fl[IVX] = wli[IDN]*wli[IVX]*vxl_hlle + wli[IPR];
+    //   fr[IVX] = wri[IDN]*wri[IVX]*vxr_hlle + wri[IPR];
 
-      fl[IVY] = wli[IDN]*wli[IVY]*vxl_hlle;
-      fr[IVY] = wri[IDN]*wri[IVY]*vxr_hlle;
+    //   fl[IVY] = wli[IDN]*wli[IVY]*vxl_hlle;
+    //   fr[IVY] = wri[IDN]*wri[IVY]*vxr_hlle;
 
-      fl[IVZ] = wli[IDN]*wli[IVZ]*vxl_hlle;
-      fr[IVZ] = wri[IDN]*wri[IVZ]*vxr_hlle;
+    //   fl[IVZ] = wli[IDN]*wli[IVZ]*vxl_hlle;
+    //   fr[IVZ] = wri[IDN]*wri[IVZ]*vxr_hlle;
 
-      fl[IEN] = el*vxl_hlle + wli[IPR]*wli[IVX];
-      fr[IEN] = er*vxr_hlle + wri[IPR]*wri[IVX];
+    //   fl[IEN] = el*vxl_hlle + wli[IPR]*wli[IVX];
+    //   fr[IEN] = er*vxr_hlle + wri[IPR]*wri[IVX];
 
-      Real tmp = 0.0;
-      if (bp_hlle != bm_hlle) {
-        tmp = 0.5*(bp_hlle + bm_hlle)/(bp_hlle - bm_hlle);
-      }
+    //   Real tmp = 0.0;
+    //   if (bp_hlle != bm_hlle) {
+    //     tmp = 0.5*(bp_hlle + bm_hlle)/(bp_hlle - bm_hlle);
+    //   }
 
-      for (int n=0; n<NHYDRO; ++n) {
-        flxi[n] = 0.5*(fl[n] + fr[n])
-          + (fl[n] - fr[n])*tmp;
-      }
+    //   for (int n=0; n<NHYDRO; ++n) {
+    //     flxi[n] = 0.5*(fl[n] + fr[n])
+    //       + (fl[n] - fr[n])*tmp;
+    //   }
 
-      flx(IDN,k,j,i) = flxi[IDN];
-      flx(ivx,k,j,i) = flxi[IVX];
-      flx(ivy,k,j,i) = flxi[IVY];
-      flx(ivz,k,j,i) = flxi[IVZ];
-      flx(IEN,k,j,i) = flxi[IEN];
+    //   flx(IDN,k,j,i) = flxi[IDN];
+    //   flx(ivx,k,j,i) = flxi[IVX];
+    //   flx(ivy,k,j,i) = flxi[IVY];
+    //   flx(ivz,k,j,i) = flxi[IVZ];
+    //   flx(IEN,k,j,i) = flxi[IEN];
 
-      for (int n=0; n<NSCALARS; ++n) {
-        if (flx(IDN,k,j,i) >= 0.0) {
-          sflx(n,k,j,i) = flx(IDN,k,j,i) * rl(n,i);
-        } else {
-          sflx(n,k,j,i) = flx(IDN,k,j,i) * rr(n,i);
-        }
-      }
+    //   for (int n=0; n<NSCALARS; ++n) {
+    //     if (flx(IDN,k,j,i) >= 0.0) {
+    //       sflx(n,k,j,i) = flx(IDN,k,j,i) * rl(n,i);
+    //     } else {
+    //       sflx(n,k,j,i) = flx(IDN,k,j,i) * rr(n,i);
+    //     }
+    //   }
 
-      continue;
-    }
+    //   continue;
+    // }
 
     
     // No loop-carried dependencies anywhere in this loop
@@ -338,6 +398,20 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     flx(ivy,k,j,i) = flxi[IVY];
     flx(ivz,k,j,i) = flxi[IVZ];
     flx(IEN,k,j,i) = flxi[IEN];
+
+if (i == 15 || i == 16) {
+  printf("HLLC FLUX i=%d "
+         "Frho=%e Fmom=%e FE=%e "
+         "rhoL=%e rhoR=%e vL=%e vR=%e pL=%e pR=%e\n",
+         i,
+         flx(IDN,k,j,i),
+         flx(ivx,k,j,i),
+         flx(IEN,k,j,i),
+         wli[IDN], wri[IDN],
+         wli[IVX], wri[IVX],
+         wli[IPR], wri[IPR]);
+}
+
 
     for (int n=0; n<NSCALARS; n++) {
       if (flx(IDN,k,j,i) >= 0.0)
