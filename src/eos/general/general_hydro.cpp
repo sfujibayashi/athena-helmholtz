@@ -266,8 +266,17 @@ void EquationOfState::ApplyPrimitiveConservedFloors(
   u_d = w_d;
 
   Real e_k = 0.5*w_d*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i)) + SQR(prim(IVZ,k,j,i)));
+#if MASS_EXCESS_ENERGY_ENABLED
+  Real s_cell[NSCALARS];
+  for (int n=0; n<NSCALARS; ++n) {
+    s_cell[n] = s(n,k,j,i);
+  }
+  Real e_mexc = MassExcEnergyDensity(u_d, s_cell);
+#else
+  Real e_mexc = 0.0;
+#endif
   // apply pressure floor, correct total energy
-  u_e = (u_e - e_k  > energy_floor_) ? u_e : energy_floor_ + e_k;
+  u_e = (u_e - e_k - e_mexc > energy_floor_) ? u_e : energy_floor_ + e_k + e_mexc;
   w_p = (w_p > pressure_floor_) ? w_p : pressure_floor_;
   if (NSCALARS) {
     Real di = 1.0/w_d;
