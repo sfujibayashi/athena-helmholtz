@@ -126,6 +126,34 @@ void MeshBlock::UserWorkInLoop(void) {
     }
   }
   
+  Real v1_max = 0.0;
+  Real cs2_max = 0.0;
+  for(int k=ks; k<=ke; k++) {
+    for(int j=js; j<=je; j++) {
+      for(int i=is; i<=ie; i++) {
+	Real rho = phydro->u(IDN,k,j,i);
+	Real temp= pscalars->r(helm::i_temp,k,j,i);
+	Real ye  = pscalars->r(helm::i_ye,k,j,i);
+	Real ytot= pscalars->r(helm::i_ytot,k,j,i);
+        Real abar= 1.0/ytot;
+	AthenaArray<Real> out;
+	out.NewAthenaArray(8);
+	peos->HelmLookupRhoT(rho, temp, ye, abar, out);
+	Real entr = out(7);
+        Real asq  = out(4);
+        if (cs2_max < asq){
+          cs2_max=asq;
+        }
+        Real v1 = phydro->u(IM1,k,j,i) / phydro->u(IDN,k,j,i);
+        if (v1_max < std::abs(v1)){
+          v1_max = std::abs(v1);
+        }
+      }
+    }
+  }
+  printf("v1max, cs2max = %12.4e %12.4e\n",v1_max, cs2_max);
+
+
   bool isok;
   isok = true;
   // printf("%12.4e %12.4e\n", phydro->u(IEN,0,0,0), phydro->u(IEN,0,0,0)/phydro->u(IDN,0,0,0));
@@ -170,6 +198,7 @@ void MeshBlock::UserWorkInLoop(void) {
   //   }
   //   printf("\n");
   // }
+
 
   if(not isok){
     std::stringstream msg;
