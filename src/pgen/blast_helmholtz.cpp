@@ -110,15 +110,15 @@ void MeshBlock::UserWorkInLoop(void) {
   for(int k=ks; k<=ke; k++) {
     for(int j=js; j<=je; j++) {
       for(int i=is; i<=ie; i++) {
-	for (int n=0; n<NWAVE; n++) {
-	  if(not isfinite(phydro->u(n,j,k,i))){
+	for (int n=0; n<NHYDRO; n++) {
+	  if(not isfinite(phydro->u(n,k,j,i))){
 	    //printf("hydro, %3d%3d\n",n,i);
 	    isok=false;
 	  }
 	}
 	
 	for (int n=0; n<NSCALARS; n++) {
-	  if(not isfinite(pscalars->r(n,j,k,i))){
+	  if(not isfinite(pscalars->r(n,k,j,i))){
 	    //printf("scalar, %3d%3d\n",n,i);
 	    isok=false;
 	  }
@@ -150,8 +150,7 @@ void MeshBlock::UserWorkInLoop(void) {
   // }
 
   if(not isok){
-    std::exit(0);
-
+    std::exit(EXIT_FAILURE);
   }
 
 }
