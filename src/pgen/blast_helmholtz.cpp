@@ -356,7 +356,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; ++j) {
 	for (int i=is; i<=ie; ++i) {
 	  Real rho  = phydro->u(IDN,k,j,i);
-	  Real egas = phydro->u(IEN,k,j,i);
+          Real ke = 0.5 / rho *
+            (  + SQR(phydro->u(IM1,k,j,i))
+               + SQR(phydro->u(IM2,k,j,i))
+               + SQR(phydro->u(IM3,k,j,i)) );
+
+	  Real egas = phydro->u(IEN,k,j,i) - ke;
 	  Real s_cell[NSCALARS];
 	  for (int n=0; n<NSCALARS; ++n) {
 	    s_cell[n] = pscalars->s(n,k,j,i);
