@@ -18,6 +18,7 @@
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
+#include <sstream>
 
 // Athena++ headers
 #include "../../../athena.hpp"
@@ -91,22 +92,59 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real rhol = wli[IDN] + (wli[IVX] - umid) * rhoa / ca; // mid-left density
     Real rhor = wri[IDN] + (umid - wri[IVX]) * rhoa / ca; // mid-right density
 
+if (GENERAL_EOS && (rhol <= 0.0 || rhor <= 0.0)) {
+  printf("HLLC bad intermediate density:\n"
+         "rhoL=%e rhoR=%e rhol=%e rhor=%e\n"
+         "pL=%e pR=%e pmid=%e "
+         "vL=%e vR=%e umid=%e ca=%e\n",
+         wli[IDN], wri[IDN], rhol, rhor,
+         wli[IPR], wri[IPR], pmid,
+         wli[IVX], wri[IVX], umid, ca);
+
+  std::stringstream msg;
+  msg << "### FATAL ERROR in HLLC: "
+      << "non-positive PVRS intermediate density" << std::endl;
+  ATHENA_ERROR(msg);
+}
+
     //--- Step 3.  Compute sound speed in L,R
 
     Real ql, qr;
     if (GENERAL_EOS) {
-      Real gl = pmy_block->peos->AsqFromRhoP(rhol, pmid, wli + NHYDRO) * rhol / pmid;
-      Real gr = pmy_block->peos->AsqFromRhoP(rhor, pmid, wri + NHYDRO) * rhor / pmid;
-      ql = (pmid <= wli[IPR]) ? 1.0 :
-           std::sqrt(1.0 + (gl + 1) / (2 * gl) * (pmid / wli[IPR]-1.0));
-      qr = (pmid <= wri[IPR]) ? 1.0 :
-           std::sqrt(1.0 + (gr + 1) / (2 * gr) * (pmid / wri[IPR]-1.0));
-    } else {
-      ql = (pmid <= wli[IPR]) ? 1.0 :
-           std::sqrt(1.0 + (gamma + 1) / (2 * gamma) * (pmid / wli[IPR]-1.0));
-      qr = (pmid <= wri[IPR]) ? 1.0 :
-           std::sqrt(1.0 + (gamma + 1) / (2 * gamma) * (pmid / wri[IPR]-1.0));
+      if (pmid <= wli[IPR]) {
+        ql = 1.0;
+      } else {
+        Real gl =
+          pmy_block->peos->AsqFromRhoP(rhol, pmid, wli + NHYDRO)
+          * rhol / pmid;
+        ql = std::sqrt(1.0 + (gl + 1.0)/(2.0*gl)
+                       * (pmid/wli[IPR] - 1.0));
+      }
+      
+      if (pmid <= wri[IPR]) {
+        qr = 1.0;
+      } else {
+        Real gr =
+          pmy_block->peos->AsqFromRhoP(rhor, pmid, wri + NHYDRO)
+          * rhor / pmid;
+        qr = std::sqrt(1.0 + (gr + 1.0)/(2.0*gr)
+                       * (pmid/wri[IPR] - 1.0));
+      }
     }
+    
+    // if (GENERAL_EOS) {
+    //   Real gl = pmy_block->peos->AsqFromRhoP(rhol, pmid, wli + NHYDRO) * rhol / pmid;
+    //   Real gr = pmy_block->peos->AsqFromRhoP(rhor, pmid, wri + NHYDRO) * rhor / pmid;
+    //   ql = (pmid <= wli[IPR]) ? 1.0 :
+    //        std::sqrt(1.0 + (gl + 1) / (2 * gl) * (pmid / wli[IPR]-1.0));
+    //   qr = (pmid <= wri[IPR]) ? 1.0 :
+    //        std::sqrt(1.0 + (gr + 1) / (2 * gr) * (pmid / wri[IPR]-1.0));
+    // } else {
+    //   ql = (pmid <= wli[IPR]) ? 1.0 :
+    //        std::sqrt(1.0 + (gamma + 1) / (2 * gamma) * (pmid / wli[IPR]-1.0));
+    //   qr = (pmid <= wri[IPR]) ? 1.0 :
+    //        std::sqrt(1.0 + (gamma + 1) / (2 * gamma) * (pmid / wri[IPR]-1.0));
+    // }
 
     //--- Step 4.  Compute the max/min wave speeds based on L/R
 
