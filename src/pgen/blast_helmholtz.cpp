@@ -49,6 +49,7 @@ namespace HelmholtzConstants {
 } // namespace HelmholtzConstants
 
 Real threshold;
+Real gamma_gas;
 
 int RefinementCondition(MeshBlock *pmb);
 
@@ -104,6 +105,8 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
     ATHENA_ERROR(msg);
   }
   
+  gamma_gas = pin->GetReal("hydro", "gamma");
+  
 }
 
 void MeshBlock::UserWorkInLoop(void) {
@@ -116,10 +119,14 @@ void MeshBlock::UserWorkInLoop(void) {
 	Real ye  = pscalars->r(helm::i_ye,k,j,i);
 	Real ytot= pscalars->r(helm::i_ytot,k,j,i);
         Real abar= 1.0/ytot;
+#if HELMHOLTZ_EOS_ENABLED
 	AthenaArray<Real> out;
 	out.NewAthenaArray(8);
 	peos->HelmLookupRhoT(rho, temp, ye, abar, out);
 	Real entr = out(7);
+#else
+        Real entr = std::pow(phydro->w(IPR,k,j,i),gamma_gas)/phydro->w(IDN,k,j,i);
+#endif
 	//printf("%12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e\n",rho,temp,ye,abar,entr,out(0),out(2),out(5));
 	user_out_var(uov::i_entr,k,j,i) = entr;
       }
@@ -136,11 +143,14 @@ void MeshBlock::UserWorkInLoop(void) {
 	Real ye  = pscalars->r(helm::i_ye,k,j,i);
 	Real ytot= pscalars->r(helm::i_ytot,k,j,i);
         Real abar= 1.0/ytot;
+#if HELMHOLTZ_EOS_ENABLED
 	AthenaArray<Real> out;
 	out.NewAthenaArray(8);
 	peos->HelmLookupRhoT(rho, temp, ye, abar, out);
-	Real entr = out(7);
-        Real asq  = out(4);
+        Real asq = out(4);
+#else
+        Real asq = 0.0;
+#endif
         if (cs2_max < asq){
           cs2_max=asq;
         }
@@ -367,6 +377,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
   
+#if HELMHOLTZ_EOS_ENABLED
   {
     using namespace HelmholtzConstants;
     // add mass-excess contribution
@@ -378,6 +389,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
+#endif
 
   {
     using namespace HelmholtzConstants;
@@ -401,10 +413,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 	  // std::cout << i << " " << rho << " "<< egas  << std::endl;
 	  // std::cout << s[0]/rho << " " << s[1]/rho << " "<< s[2]/rho <<" "<< s[3]/rho << std::endl;
 	  // std::cout << pscalars->s(0,k,j,i)/rho << " " << pscalars->s(1,k,j,i)/rho << " "<< pscalars->s(2,k,j,i)/rho <<" "<< pscalars->s(3,k,j,i)/rho << std::endl;
-	  
+#if HELMHOLTZ_EOS_ENABLED	  
 	  Real temp = peos->TempFromRhoEg(rho, egas, s_cell);
+#else
+          Real temp = 0.0;
+#endif
 	  pscalars->s(helm::i_temp,k,j,i) = temp * phydro->u(IDN,k,j,i);
-	  
 	  printf("%12.4e%12.4e%12.4e%12.4e%12.4e%12.4e\n", pcoord->x1v(i), rho, temp, egas, egas/rho, s_cell[helm::i_mexc]*MeV_to_erg*avo/rho);
 	  
 	}

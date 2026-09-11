@@ -358,7 +358,7 @@ if args['eos'][:8] == 'general/':
     if args['s'] or args['g']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with relativity')
-    if args['flux'] not in ['hllc', 'hlld']:
+    if args['flux'] not in ['hllc', 'hlld', 'hlle']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
@@ -393,9 +393,12 @@ else:
     definitions['NHYDRO_VARIABLES'] = '5'
     if args['eos'] in ['general/eos_table', 'general/helmholtz', 'general/helmholtz_mass']:
         definitions['EOS_TABLE_ENABLED'] = '1'
-    definitions['MASS_EXCESS_ENERGY_ENABLED'] = \
-        '1' if args['eos'] == 'general/helmholtz_mass' else '0'
+definitions['MASS_EXCESS_ENERGY_ENABLED'] = \
+    '1' if args['eos'] == 'general/helmholtz_mass' else '0'
+definitions['HELMHOLTZ_EOS_ENABLED'] = (
+    '1' if args['eos'] in ['general/helmholtz', 'general/helmholtz_mass'] else '0'
 
+)
 if args['eos_table']:
     definitions['EOS_TABLE_ENABLED'] = '1'
 
