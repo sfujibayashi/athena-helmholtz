@@ -119,6 +119,8 @@ class HelmTable {
     nmax = pin->GetOrAddInteger("hydro", "helm_nmax", 1000);
     Tfloor = pin->GetOrAddBoolean("hydro", "helm_Tfloor", false);
 
+    //temp_inv_lo = pin->GetOrAddInteger("hydro", "helm_temp_inv_lo", 1.0e4);
+    
     // helmholtz free energy and its derivatives
     f.InitWithShallowSlice(ptable->table.data, 3, 0, 1);
     fd.InitWithShallowSlice(ptable->table.data, 3, 1, 1);
@@ -158,18 +160,44 @@ class HelmTable {
           << "rho*Ye is outside Helmholtz table range." << std::endl
           << "rho*Ye = " << din
           << ", range = [" << d(0) << ", " << d(imax-1) << "]"
-          << std::endl;
+          << std::endl
+          << "rho = " << den
+          << ", Ye = " << ye
+          << ", rho*Ye = " << din << std::endl;
       ATHENA_ERROR(msg);
     }
 
-    if (!std::isfinite(temp) || temp < t(0) || temp > t(jmax-1)) {
+    const Real tol = 100.0 * std::numeric_limits<Real>::epsilon();
+
+    if (!std::isfinite(temp)) {
       std::stringstream msg;
       msg << "### FATAL ERROR in HelmLookupRhoT" << std::endl
-          << "Temperature is outside Helmholtz table range." << std::endl
-          << "T = " << temp
-          << ", range = [" << t(0) << ", " << t(jmax-1) << "]"
-          << std::endl;
+          << "Non-finite temperature: T = " << temp << std::endl;
       ATHENA_ERROR(msg);
+    }
+
+    if (temp < t(0)) {
+      if (temp >= t(0)*(1.0 - tol)) {
+        temp = t(0);
+      } else {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in HelmLookupRhoT" << std::endl
+            << "Temperature is below Helmholtz table range." << std::endl
+            << "T = " << temp << ", Tmin = " << t(0) << std::endl;
+        ATHENA_ERROR(msg);
+      }
+    }
+
+    if (temp > t(jmax-1)) {
+      if (temp <= t(jmax-1)*(1.0 + tol)) {
+        temp = t(jmax-1);
+      } else {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in HelmLookupRhoT" << std::endl
+            << "Temperature is above Helmholtz table range." << std::endl
+            << "T = " << temp << ", Tmax = " << t(jmax-1) << std::endl;
+        ATHENA_ERROR(msg);
+      }
     }
     
     //hash locate this temperature and density
@@ -1095,6 +1123,7 @@ class HelmTable {
  private:
   Real prec;
   int nmax;
+  //Real temp_inv_lo;
   bool Tfloor;
   AthenaArray<Real> f, ft, ftt, fd, fdd, fdt, fddt, fdtt, fddtt;
   AthenaArray<Real> dpdf, dpdft, dpdfd, dpdfdt;
