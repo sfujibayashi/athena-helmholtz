@@ -169,6 +169,9 @@ class EquationOfState {
     AthenaArray<Real> &OutData);
   // temperature call
   Real TempFromRhoEg(Real rho, Real egas, Real* s);
+
+  // mass-excess contribution to conserved energy
+  Real MassExcEnergyDensity(Real rho, const Real* s);
   
  private:
   // (C++11) in-class Default Member Initializer (fallback option):

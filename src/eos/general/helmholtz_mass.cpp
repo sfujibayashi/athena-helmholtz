@@ -1581,7 +1581,7 @@ void EquationOfState::HelmLookupRhoT(Real rho, Real temp, Real ye, Real abar,
 }
 
 
-Real EquationOfState::MassExcEnergyDensity(const Real* s){
+Real EquationOfState::MassExcEnergyDensity(Real rho, const Real* s){
   using namespace HelmholtzConstants;  // NOLINT (build/namespace)
 
   if (NSCALARS > 0 && i_mexc >= 0) {
