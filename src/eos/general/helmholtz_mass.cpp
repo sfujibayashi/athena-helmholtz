@@ -827,16 +827,37 @@ class HelmTable {
 
   void HelmInvertPres(Real rho, Real GuessTemp, Real ye, Real abar, Real pres,
 		      AthenaArray<Real> &OutData) {
+
+    Real logT_min = std::log(t(0));
+    Real logT_max = std::log(t(jmax-1));
     
     HelmLookupRhoT(rho, t(0), ye, abar, OutData);
     Real pres_min = OutData(2)*(1.0 - prec);
-    Real logT_min = std::log(t(0));
     
     if(pres <= pres_min*(1.0+2.0*prec)){
       HelmLookupRhoT(rho, t(0), ye, abar, OutData);
       return;
     }
     
+    HelmLookupRhoT(rho, t(jmax-1), ye, abar, OutData);
+    Real pres_max = OutData(2);
+    
+    if (pres > pres_max*(1.0+prec)) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in EquationOfState inversion (HelmInvertPres)"
+          << std::endl
+          << "Requested pressure is above Helmholtz table Tmax."
+          << std::endl
+          << "rho = " << rho << ", pres = " << pres
+          << ", pres(Tmax) = " << pres_max << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    
+    if (pres >= pres_max) {
+      HelmLookupRhoT(rho, t(jmax-1), ye, abar, OutData);
+      return;
+    }
+
     Real pres_therm = pres - pres_min;
     Real log_pres_therm = std::log(pres_therm);
     
@@ -853,6 +874,7 @@ class HelmTable {
     int nlim = nmax;
     
     Real logT = std::log(GuessTemp);
+    logT = std::max(logT_min, std::min(logT, logT_max));
     Real error = 1.0;
     while(std::abs(error) > prec){
       Real T=std::exp(logT);
@@ -892,9 +914,7 @@ class HelmTable {
       }
 
       logT = logT + dlogT*fac;
-      if(logT < logT_min){
-	logT = logT_min;
-      }
+      logT = std::max(logT_min, std::min(logT, logT_max));
     }
 
     Real T = std::exp(logT);
