@@ -92,20 +92,66 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real rhol = wli[IDN] + (wli[IVX] - umid) * rhoa / ca; // mid-left density
     Real rhor = wri[IDN] + (umid - wri[IVX]) * rhoa / ca; // mid-right density
 
-if (GENERAL_EOS && (rhol <= 0.0 || rhor <= 0.0)) {
-  printf("HLLC bad intermediate density:\n"
-         "rhoL=%e rhoR=%e rhol=%e rhor=%e\n"
-         "pL=%e pR=%e pmid=%e "
-         "vL=%e vR=%e umid=%e ca=%e\n",
-         wli[IDN], wri[IDN], rhol, rhor,
-         wli[IPR], wri[IPR], pmid,
-         wli[IVX], wri[IVX], umid, ca);
+    bool fallback_hlle =
+      !std::isfinite(pmid) ||
+      !std::isfinite(umid) ||
+      !std::isfinite(rhol) ||
+      !std::isfinite(rhor) ||
+      pmid <= 0.0 ||
+      rhol <= 0.0 ||
+      rhor <= 0.0;
 
-  std::stringstream msg;
-  msg << "### FATAL ERROR in HLLC: "
-      << "non-positive PVRS intermediate density" << std::endl;
-  ATHENA_ERROR(msg);
-}
+    if (GENERAL_EOS && fallback_hlle) {
+      al = std::min(wli[IVX] - cl, wri[IVX] - cr);
+      ar = std::max(wli[IVX] + cl, wri[IVX] + cr);
+
+      Real bp_hlle = std::max(ar, Real(0.0));
+      Real bm_hlle = std::min(al, Real(0.0));
+
+      Real vxl_hlle = wli[IVX] - bm_hlle;
+      Real vxr_hlle = wri[IVX] - bp_hlle;
+
+      fl[IDN] = wli[IDN]*vxl_hlle;
+      fr[IDN] = wri[IDN]*vxr_hlle;
+
+      fl[IVX] = wli[IDN]*wli[IVX]*vxl_hlle + wli[IPR];
+      fr[IVX] = wri[IDN]*wri[IVX]*vxr_hlle + wri[IPR];
+
+      fl[IVY] = wli[IDN]*wli[IVY]*vxl_hlle;
+      fr[IVY] = wri[IDN]*wri[IVY]*vxr_hlle;
+
+      fl[IVZ] = wli[IDN]*wli[IVZ]*vxl_hlle;
+      fr[IVZ] = wri[IDN]*wri[IVZ]*vxr_hlle;
+
+      fl[IEN] = el*vxl_hlle + wli[IPR]*wli[IVX];
+      fr[IEN] = er*vxr_hlle + wri[IPR]*wri[IVX];
+
+      Real tmp = 0.0;
+      if (bp_hlle != bm_hlle) {
+        tmp = 0.5*(bp_hlle + bm_hlle)/(bp_hlle - bm_hlle);
+      }
+
+      for (int n=0; n<NHYDRO; ++n) {
+        flxi[n] = 0.5*(fl[n] + fr[n])
+          + (fl[n] - fr[n])*tmp;
+      }
+
+      flx(IDN,k,j,i) = flxi[IDN];
+      flx(ivx,k,j,i) = flxi[IVX];
+      flx(ivy,k,j,i) = flxi[IVY];
+      flx(ivz,k,j,i) = flxi[IVZ];
+      flx(IEN,k,j,i) = flxi[IEN];
+
+      for (int n=0; n<NSCALARS; ++n) {
+        if (flx(IDN,k,j,i) >= 0.0) {
+          sflx(n,k,j,i) = flx(IDN,k,j,i) * rl(n,i);
+        } else {
+          sflx(n,k,j,i) = flx(IDN,k,j,i) * rr(n,i);
+        }
+      }
+
+      continue;
+    }
 
     //--- Step 3.  Compute sound speed in L,R
 
