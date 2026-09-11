@@ -151,6 +151,17 @@ class HelmTable {
     Real din = ye * den;
     Real ytot1 = 1.0/abar;
     Real zbar = ye * abar;
+
+    if (din < d(0) || din > d(imax-1)) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in HelmLookupRhoT" << std::endl
+          << "rho*Ye is outside Helmholtz table range." << std::endl
+          << "rho*Ye = " << din
+          << ", range = [" << d(0) << ", " << d(imax-1) << "]"
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    
     //hash locate this temperature and density
     int jat = static_cast<int>((std::log10(temp) - tlo)*tstpi);
     jat = std::max(0,std::min(jat,jmax-2));
