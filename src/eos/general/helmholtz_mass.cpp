@@ -467,7 +467,7 @@ class HelmTable {
     //x       = ye * ye;
     Real sele    = -df_t * ye;
     Real dsepdt  = -df_tt * ye;
-    Real dsepdd  = -df_dt * x;
+    Real dsepdd  = -df_dt * ye * ye;
     //Real dsepda  = ytot1 * (ye * df_dt * din - sele);
     //Real dsepdz  = -ytot1 * (ye * df_dt * den  + df_t);
 
@@ -733,6 +733,9 @@ class HelmTable {
 
   void HelmInvertEgas(Real rho, Real GuessTemp, Real ye, Real abar, Real egas,
 		      AthenaArray<Real> &OutData) {
+
+    Real logT_min = std::log(t(0));
+    Real logT_max = std::log(t(jmax-1));
     
     HelmLookupRhoT(rho, t(0), ye, abar, OutData);
     Real egas_min = OutData(0)*(1.0-prec);
@@ -742,6 +745,25 @@ class HelmTable {
       return;
     }
     
+    HelmLookupRhoT(rho, t(jmax-1), ye, abar, OutData);
+    Real egas_max = OutData(0);
+    
+    if (egas > egas_max*(1.0+prec)) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in EquationOfState inversion (HelmInvertEgas)"
+          << std::endl
+          << "Requested internal energy is above Helmholtz table Tmax."
+          << std::endl
+          << "rho = " << rho << ", egas = " << egas
+          << ", egas(Tmax) = " << egas_max << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    
+    if (egas >= egas_max) {
+      HelmLookupRhoT(rho, t(jmax-1), ye, abar, OutData);
+      return;
+    }
+
     Real egas_therm = egas - egas_min;
     Real log_egas_therm = std::log(egas_therm);
     
@@ -756,6 +778,7 @@ class HelmTable {
     int nlim = nmax;
     
     Real logT = std::log(GuessTemp);
+    logT = std::max(logT_min, std::min(logT, logT_max));
     Real error = 1.0;
     while(std::abs(error) > prec){
       Real T=std::exp(logT);
@@ -793,6 +816,7 @@ class HelmTable {
       }
 
       logT = logT + dlogT*fac;
+      logT = std::max(logT_min, std::min(logT, logT_max));
     }
     Real T = std::exp(logT);
     HelmLookupRhoT(rho, T, ye, abar, OutData);
