@@ -95,13 +95,15 @@ void EquationOfState::ConservedToPrimitive(
 
         // apply density floor, without changing momentum or energy
         if (u_d < density_floor_) {
-          for (int n=0; n<NSCALARS; ++n) {
-            Real& s_n = s(n,k,j,i);
-            s_n *= u_d / density_floor_;
-            s_n = (s_n < scalar_floor_*density_floor_) ?
-                  scalar_floor_*density_floor_ : s_n;
-          }
           u_d = density_floor_;
+          for (int n=0; n<NSCALARS; ++n) {
+            Real r_n = r_old(n,k,j,i);
+            s(n,k,j,i) = r_n * u_d;
+            // Real& s_n = s(n,k,j,i);
+            // s_n *= u_d / density_floor_;
+            // s_n = (s_n < scalar_floor_*density_floor_) ?
+            //       scalar_floor_*density_floor_ : s_n;
+          }
         }
         w_d = u_d;
 
