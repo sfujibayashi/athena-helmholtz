@@ -152,12 +152,22 @@ class HelmTable {
     Real ytot1 = 1.0/abar;
     Real zbar = ye * abar;
 
-    if (din < d(0) || din > d(imax-1)) {
+    if (!std::isfinite(din) || din < d(0) || din > d(imax-1)) {
       std::stringstream msg;
       msg << "### FATAL ERROR in HelmLookupRhoT" << std::endl
           << "rho*Ye is outside Helmholtz table range." << std::endl
           << "rho*Ye = " << din
           << ", range = [" << d(0) << ", " << d(imax-1) << "]"
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    if (!std::isfinite(temp) || temp < t(0) || temp > t(jmax-1)) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in HelmLookupRhoT" << std::endl
+          << "Temperature is outside Helmholtz table range." << std::endl
+          << "T = " << temp
+          << ", range = [" << t(0) << ", " << t(jmax-1) << "]"
           << std::endl;
       ATHENA_ERROR(msg);
     }
