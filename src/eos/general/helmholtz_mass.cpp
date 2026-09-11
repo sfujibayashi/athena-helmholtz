@@ -755,6 +755,15 @@ class HelmTable {
   void HelmInvertEgas(Real rho, Real GuessTemp, Real ye, Real abar, Real egas,
 		      AthenaArray<Real> &OutData) {
 
+    if (!std::isfinite(egas)) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in EquationOfState inversion (HelmInvertEgas)"
+          << std::endl
+          << "Non-finite internal energy: egas = " << egas
+          << ", rho = " << rho << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
     Real logT_min = std::log(t(0));
     Real logT_max = std::log(t(jmax-1));
     
@@ -848,6 +857,15 @@ class HelmTable {
 
   void HelmInvertPres(Real rho, Real GuessTemp, Real ye, Real abar, Real pres,
 		      AthenaArray<Real> &OutData) {
+
+    if (!std::isfinite(pres)) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in EquationOfState inversion (HelmInvertPres)"
+          << std::endl
+          << "Non-finite pressure: pres = " << pres
+          << ", rho = " << rho << std::endl;
+      ATHENA_ERROR(msg);
+    }
 
     Real logT_min = std::log(t(0));
     Real logT_max = std::log(t(jmax-1));
